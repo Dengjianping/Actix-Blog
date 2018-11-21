@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Jamie's Blog{% endblock title %}
+
+{% block head %}
+    <script>
+        $(document).ready(function(e) {
+            // showdown.setFlavor('github');
+            // cannot use body | safe here to render markdown due to escape problem
+            // I have to hide the body div first, then get the markdown back, then use showdown to handle.
+            var md = $('#short_body').text().trimLeft();
+            $('#short_body').empty();
+            var target = document.getElementById('short_body');
+            var converter = new showdown.Converter();
+            html = converter.makeHtml(md);
+            target.innerHTML = html;
+            $('#short_body').show();
+        })
+    </script>
+{% endblock head %}
+
+{% block content %}
+    <!-- Page Header -->
+    <!-- <header class="masthead" style="background-image: url('img/home-bg.jpg')"> -->
+    <header class="masthead" style="height: 300px;">
+        <div class="overlay"></div>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-md-10 mx-auto">
+                    <div class="site-heading">
+                    <h2>Jamie's Blog</h2>
+                    <span class="subheading">Jamie's Blog</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-md-10 mx-auto">
+                {% if posts %}
+                {% for post in posts | reverse %}
+                <div class="post-preview">
+                    <a href="/article/{{ post.title }}/">
+                    <h2 class="post-title">
+                        {{ post.title }}
+                    </h2>
+                    <h3 class="post-subtitle" style="display:none;" id="short_body">
+                        {{ post.body | truncate(length=50, end="...") }}
+                    </h3>
+                    </a>
+                    <p class="post-meta">
+                        Posted On {{ post.publish | date }}
+                    </p>
+                </div>
+                {% endfor %}
+                
+                <!-- Pager -->
+                <div class="clearfix">
+                    {% if last_page or posts | length < 5 %}
+                    <a class="btn btn-secondary float-right">Last Page &rarr;</a>
+                    {% else %}
+                    <a class="btn btn-primary float-right" href="/admin/index/page/{{ page_num }}/">Older Posts &rarr;</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <hr>
+{% endblock content %}

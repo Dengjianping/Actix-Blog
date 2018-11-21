@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock title %}
+
+{% block head %}
+    <script>
+        $(document).ready(function(e) {
+            showdown.setFlavor('github');
+            // showdown.setOption('omitExtraWLInCodeBlocks', true);
+            // console.log(showdown.getOptions());
+            // cannot use body | safe here to render markdown due to escape problem
+            // I have to hide the body div first, then get the markdown back, then use showdown to handle.
+            // it looks template engine issue, tera
+            // console.log(document.getElementById('#markdown').innerHTML);
+            var md = $('#markdown').text().trimLeft(); // there're lots of empty space ahead of markdown
+            // console.log(md);
+            $('#markdown').empty();
+            var converter = new showdown.Converter();
+            html = converter.makeHtml(md);
+            $('#markdown').append(html);
+            $('#markdown').show();
+
+            $("#like").click(function(event, data){
+                var n = $("#count").text();
+                n = parseInt(n) + 1;
+                $.ajax({
+                    type: "POST",
+                    url: "/user_likes/",
+                    contentType: "application/json; charset=utf-8;",
+                    data: JSON.stringify({'likes_count': n}), // must use stringify to serialize json data
+                    timeout: 10000,
+                    success: function() {
+                        $("#count").text(n);
+                    }
+                })
+            });
+        })
+    </script>
+{% endblock head %}
+
+{% block content %}
+    <!-- Page Header -->
+    <header class="masthead" style="background-image: url('img/about-bg.jpg')">
+        <div class="overlay"></div>
+        <div class="container">
+            <div class="row">
+            <div class="col-lg-8 col-md-10 mx-auto">
+                <div class="page-heading">
+                <h1>{{ title }}</h1>
+                <span class="subheading">posted on {{ publish | date(format="%Y-%m-%d") }}</span>
+                </div>
+            </div>
+            </div>
+        </div>
+    </header>
+
+    <article>
+        <div class="container">
+            <div class="row">
+                <!-- I have to use the style, due to tera cannot get variable in aera <script></script> -->
+                <div class="col-lg-8 col-md-10 mx-auto" id="markdown" style="display:none;">
+                {{ body | safe }}
+                </div>
+                <div class="col-lg-4 col-md-2 mx-auto">
+                    <button class="btn btn-primary" id="like">Like
+                        {% if likes %}
+                        <span class="badge" id="count">{{ likes }}</span>
+                        {% else %}
+                        <span class="badge" id="count">0</span>
+                        {% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+      </article>
+
+    <hr>
+{% endblock content %}
