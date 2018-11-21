@@ -29,8 +29,8 @@ I' a new rustacean, using actix-web to build a personal blog right now, and tryi
 
 
 ## Glance
-![main page](samples/blog_page.jpg)
-![admin page](samples/admin_page.jpg)
+![main page](samples\blog_page.jpg)
+![admin page](samples\admin_page.jpg)
 
 ## Issues
 1. Still having problem on renderring markdown, like programming-lang code section.
