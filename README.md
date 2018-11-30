@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://travis-ci.com/Dengjianping/Actix-Blog">
-    <img alt="[![Build Status](https://travis-ci.com/Dengjianping/Actix-Blog.svg?branch=master)](https://travis-ci.com/Dengjianping/Actix-Blog)">
+    <img alt="Build Status" src="hhttps://travis-ci.com/Dengjianping/Actix-Blog.svg?branch=master">
   </a>
 </p>
 
