@@ -1,3 +1,9 @@
+<p align="center">
+  <a href="https://travis-ci.com/Dengjianping/Actix-Blog">
+    <img alt="[![Build Status](https://travis-ci.com/Dengjianping/Actix-Blog.svg?branch=master)](https://travis-ci.com/Dengjianping/Actix-Blog)">
+  </a>
+</p>
+
 ## About this project(Experimenal)
 I' a new rustacean, using actix-web to build a personal blog right now, and trying to use the features in rust(learning by practice), so maybe I'll modify these code frequently(but based on the latest stable rust).
 
