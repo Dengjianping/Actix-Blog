@@ -10,6 +10,7 @@ CREATE TABLE posts
     updated timestamp,
     status character varying(10) NOT NULL,
     user_id integer NOT NULL,
+    likes integer NOT NULL,
     -- CONSTRAINT posts_pkey PRIMARY KEY (id),
     FOREIGN KEY (user_id) REFERENCES users(id)
     -- CONSTRAINT blog_post_author_id_dd7a8485_fk_auth_user_id FOREIGN KEY (author_id)
