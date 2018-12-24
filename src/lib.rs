@@ -3,14 +3,14 @@
 // https://doc.rust-lang.org/reference/procedural-macros.html
 
 extern crate proc_macro;
-// extern crate proc_macro2;
-// extern crate syn;
-// #[macro_use] extern crate quote;
+extern crate proc_macro2;
+extern crate syn;
+#[macro_use] extern crate quote;
 
 
 // https://doc.rust-lang.org/1.30.0/proc_macro/
 use proc_macro::TokenStream;
-use quote::quote;
+// use quote::quote;
 // use proc_macro2::TokenStream;
 
 // remember to add 'full' feature for sys in toml file, 
