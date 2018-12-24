@@ -4,6 +4,35 @@
 
 {% block head %}
     <link href="/static/css/sb-admin.css" rel="stylesheet" media="screen">
+    <script>
+        $(document).ready(function(e) {
+            $("#mainNav").hide();
+            
+            $("#inputPassword").keyup(function(event) {
+                if (event.keyCode === 13) {
+                    $("#sendMessageButton").click();
+                }
+            });
+
+            $('#inputEmail').on('blur', function(){
+                $("#wrong_user_prompt").hide();
+                if ($('#inputEmail').val() != '') {
+                    $.ajax({
+                    type: "POST",
+                    url: "/admin/user_exist/",
+                    contentType: "application/json; charset=utf-8;",
+                    data: JSON.stringify({'username': $('#inputEmail').val()}), // must use stringify to serialize json data
+                    timeout: 10000,
+                    success: function(data) {
+                        if (data) {
+                            $("#wrong_user_prompt").show();
+                        }
+                        }
+                    })
+                }
+            });
+        })
+    </script>
 {% endblock head %}
 
 {% block content %}
@@ -15,13 +44,13 @@
                 <div class="form-group">
                 <div class="form-label-group">
                     <input type="text" id="inputEmail" class="form-control" placeholder="Email or Username" required="required" autofocus="autofocus" name="username">
-                    <!-- <label for="inputEmail">Email or Username</label> -->
+                    <p style="display:none;" id="wrong_user_prompt">This user doesn't exist, input again.</p>
                 </div>
                 </div>
                 <div class="form-group">
                 <div class="form-label-group">
                     <input type="password" id="inputPassword" class="form-control" placeholder="Password" required="required" name="password">
-                    <!-- <label for="inputPassword">Password</label> -->
+                    <p style="display:none;" id="wrong_pwd_prompt">Wrong password, input again.</p>
                 </div>
                 </div>
                 

@@ -1,0 +1,39 @@
+{% extends "admin/adminbase.html" %}
+
+{% block title %}Dashboard{% endblock title %}
+
+{% block head %}
+    <link href="/static/css/sb-admin.css" rel="stylesheet" media="screen">
+{% endblock head %}
+
+{% block content %}
+    <div id="content-wrapper">
+    <div class="container-fluid">
+        <!-- Breadcrumbs-->
+        <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="#">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item active">About Yourself</li>
+        </ol>
+
+        <!-- Icon Cards-->
+        <div class="row">
+        <div class="col-xl-3 col-sm-6 mb-3">
+            {% if yourself %}
+            <ul class="list-group">
+                <li class="list-group-item active"><a href="#">{{ yourself.username }}</a></li>
+                <li class="list-group-item">First Name: {{ yourself.first_name }}</li>
+                <li class="list-group-item">Last Name: {{ yourself.last_name }}</li>
+                <li class="list-group-item">Email: {{ yourself.email }}</li>
+                <li class="list-group-item">Joined on: {{ yourself.date_joined | date(format="%Y-%m-%d") }}</li>
+                <li class="list-group-item">Last logined on: {{ yourself.last_login | date(format="%Y-%m-%d") }}</li>
+                <li class="list-group-item">Staff: {{ yourself.is_staff }}</li>
+                <li class="list-group-item">Superuser: {{ yourself.is_superuser }}</li>
+            </ul>
+            {% endif %}
+        </div>
+        </div>
+    </div>
+    </div>
+{% endblock content %}

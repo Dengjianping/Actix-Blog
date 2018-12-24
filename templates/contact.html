@@ -4,6 +4,29 @@
 
 {% block head %}
     <script>
+        $(document).ready(function(e) {
+            $("#sendMessageButton").click(function(event, data){
+                event.preventDefault();
+                var tourist_name = $("#tourist_name").val();
+                var email = $("#email").val();
+                var message = $("#message").val();
+                console.log(tourist_name);
+                $.ajax({
+                    type: "POST",
+                    url: "/add_contact/",
+                    contentType: "application/json; charset=utf-8;",
+                    data: JSON.stringify({'tourist_name': tourist_name, 'email': email, 'message': message}), // must use stringify to serialize json data
+                    timeout: 10000,
+                    success: function(data) {
+                        console.log("contact sent successfully.");
+                    },
+                    error: function(data) {
+                        console.log('error happened.')
+                        console.log(data);
+                    }
+                })
+            });
+        })
     </script>
 {% endblock head %}
 
@@ -31,11 +54,11 @@
             <!-- Contact Form - Enter your email address on line 19 of the mail/contact_me.php file to make this form work. -->
             <!-- WARNING: Some web hosts do not allow emails to be sent through forms to common mail hosts like Gmail or Yahoo. It's recommended that you use a private domain email address! -->
             <!-- To use the contact form, your site must be on a live web host with PHP! The form will not work locally! -->
-            <form name="sentMessage" id="contactForm" novalidate>
+            <form name="sentMessage" id="contactForm">
                 <div class="control-group">
                     <div class="form-group floating-label-form-group controls">
                         <label>Name</label>
-                        <input type="text" class="form-control" placeholder="Name" id="name" required data-validation-required-message="Please enter your name.">
+                        <input type="text" class="form-control" placeholder="Name" id="tourist_name" required data-validation-required-message="Please enter your name.">
                         <p class="help-block text-danger"></p>
                     </div>
                 </div>
@@ -63,5 +86,5 @@
         </div>
     </div>
 
-    <hr>
+
 {% endblock content %}

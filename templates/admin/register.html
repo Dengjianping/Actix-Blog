@@ -4,6 +4,53 @@
 
 {% block head %}
     <link href="/static/css/sb-admin.css" rel="stylesheet" media="screen">
+    <script>
+        $(document).ready(function(e) {
+            $("#mainNav").hide();
+            
+            $("#password").keyup(function(event) {
+                if (event.keyCode === 13) {
+                    $("#sendMessageButton").click();
+                }
+            });
+
+            $('#username').on('blur', function(){
+                $("#exist_user_prompt").hide();
+                if ($('#username').val() != '') {
+                    $.ajax({
+                    type: "POST",
+                    url: "/admin/user_exist/",
+                    contentType: "application/json; charset=utf-8;",
+                    data: JSON.stringify({'username': $('#username').val()}), // must use stringify to serialize json data
+                    timeout: 10000,
+                    success: function(data) {
+                        if (!data) {
+                            $("#exist_user_prompt").show();
+                        }
+                        }
+                    })
+                }
+            });
+
+            $('#email').on('blur', function(){
+                $("#exist_email_prompt").hide();
+                if ($('#email').val() != '') {
+                    $.ajax({
+                    type: "POST",
+                    url: "/admin/email_exist/",
+                    contentType: "application/json; charset=utf-8;",
+                    data: JSON.stringify({'email': $('#email').val()}), // must use stringify to serialize json data
+                    timeout: 10000,
+                    success: function(data) {
+                        if (!data) {
+                            $("#exist_email_prompt").show();
+                        }
+                    }
+                    })
+                }
+            });
+        })
+    </script>
 {% endblock head %}
 
 {% block content %}
@@ -14,9 +61,11 @@
             <form action="/admin/register/" method="POST">
                 <div class="form-group">
                     <input type="text" id="username" class="form-control" placeholder="User Name" required="required" name="username">
+                    <p style="display:none;" id="exist_user_prompt">This user's been registered, try another one.</p>
                 </div>
                 <div class="form-group">
                     <input type="email" id="email" class="form-control" placeholder="Email address" required="required" name="email">
+                    <p style="display:none;" id="exist_email_prompt">This email's been used, try another one.</p>
                 </div>
                 <div class="form-group">
                 <div class="form-row">

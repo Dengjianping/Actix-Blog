@@ -18,7 +18,7 @@
 
 <body id="page-top">
     <nav class="navbar navbar-expand navbar-dark bg-dark static-top">
-        <a class="navbar-brand mr-1" href="index.html">Dashboard</a>
+        <a class="navbar-brand mr-1" href="/admin/dashboard/">Dashboard</a>
         <button class="btn btn-link btn-sm text-white order-1 order-sm-0" id="sidebarToggle" href="#">
         <i class="fas fa-bars"></i>
         </button>
@@ -30,6 +30,7 @@
         {% if username %}
         <a class="navbar-brand mr-1" href="#">{{ username }}</a>
         <a class="navbar-brand mr-1" href="/admin/logout/">Logout</a>
+        <!-- <a class="navbar-brand mr-1" href="/admin/reset_password/">Reset Password</a> -->
         {% endif %}
     </nav>
 
@@ -53,9 +54,9 @@
             <span>Write Post</span></a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="#">
+            <a class="nav-link" href="/admin/about_self/">
             <i class="fas fa-fw fa-table"></i>
-            <span>Modify Post</span></a>
+            <span>Personal Info</span></a>
         </li>
         </ul>
         {% block content %}{% endblock content %}
