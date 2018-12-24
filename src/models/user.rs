@@ -1,32 +1,27 @@
 use bcrypt;
-use std::time::SystemTime;
-
-use diesel::prelude::*;
-use diesel::{ pg::PgConnection, 
-              r2d2::{ ConnectionManager, Pool, PooledConnection }};
-use diesel::result::Error as DBError;
-use dotenv::dotenv;
-
-use actix::prelude::*;
 use chrono::prelude::*;
+use crate::models::schema::users;
+use crate::utils::utils::DBPool;
+use diesel::{ prelude::*, pg::PgConnection, result::Error as DBError, associations::Identifiable };
+use std::time::SystemTime;
+use serde_derive::{ Deserialize, Serialize };
 
-use models::schema::{users};
-use utils::utils::{DBPool, DBState};
 
 #[derive(Queryable, Debug, Serialize, Deserialize, Identifiable)]
 pub struct User {
     pub id: i32,
-    pub username: String,
     pub password: String,
+    pub username: String,
     pub first_name: String,
     pub last_name: String,
     pub email: String,
+    pub is_superuser: bool,
     pub is_staff: bool,
     pub is_active: bool,
-    pub is_superuser: bool,
-    pub date_joined: Option<SystemTime>,
-    pub last_login: Option<SystemTime>,
+    pub last_login: Option<NaiveDateTime>,
+    pub date_joined: Option<NaiveDateTime>,
 }
+
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]
 #[table_name = "users"]
@@ -37,8 +32,8 @@ pub struct NewUser {
     pub last_name: String,
     pub email: String,
     pub is_staff: bool,
-    pub date_joined: Option<SystemTime>,
-    pub last_login: Option<SystemTime>,
+    pub last_login: Option<NaiveDateTime>,
+    pub date_joined: Option<NaiveDateTime>,
 }
 
 
@@ -51,8 +46,8 @@ impl From<actix_web::Form<CreateUser>> for NewUser {
             last_name: user.last_name.clone(), 
             email: user.email.clone(),
             is_staff: false,
-            date_joined: Some(SystemTime::now()),
-            last_login: Some(SystemTime::now()),
+            last_login: Some(Utc::now().naive_utc()),
+            date_joined: Some(Utc::now().naive_utc()),
         }
     }
 }
@@ -75,8 +70,8 @@ pub struct CreateUser {
 }
 
 
-impl Actor for DBPool {
-    type Context = SyncContext<Self>;
+impl actix::Actor for DBPool {
+    type Context = actix::SyncContext<Self>;
 }
 
 
@@ -90,25 +85,25 @@ pub struct PasswordChange {
 pub enum UserFinds {
     ID(i32),
     UserName(String),
-    EMAIL(String),
-    UpdatePassword(PasswordChange),
+    Email(String),
+    UpdatePassword(PasswordChange, String), // this string store username or email
     InsertUser(NewUser),
     CheckLoginUser(LoginUser),
 }
 
-impl Message for UserFinds {
-    type Result = Result<User, DBError>;
+impl actix::Message for UserFinds {
+    type Result = Result<Vec<User>, DBError>;
 }
 
-impl Handler<UserFinds> for DBPool {
-    type Result = Result<User, DBError>;
+impl actix::Handler<UserFinds> for DBPool {
+    type Result = Result<Vec<User>, DBError>;
 
     fn handle(&mut self, msg: UserFinds, _: &mut Self::Context) -> Self::Result {
-        use models::schema::users::dsl::*; // users imported
-        use models::schema;
+        use crate::models::schema::users::dsl::*; // users imported
+        use crate::models::schema;
 
         let conn: &PgConnection = &self.conn;
-        let mut post_items = match msg {
+        let post_items = match msg {
             UserFinds::ID(idx) => { // find user by id
                 users.filter(schema::users::id.eq(&idx)).load::<User>(conn)
                     .expect("failed to load users")
@@ -117,18 +112,22 @@ impl Handler<UserFinds> for DBPool {
                 users.filter(schema::users::username.eq(&user)).load::<User>(conn)
                     .expect("failed to load posts")
             }
-            UserFinds::EMAIL(mail) => { // find user by email
+            UserFinds::Email(mail) => { // find user by email
                 users.filter(schema::users::email.eq(&mail)).load::<User>(conn)
                     .expect("failed to load posts")
             }
-            UserFinds::UpdatePassword(new_pwd) => { // change password
-                users.order(schema::users::id.desc()).load::<User>(conn).expect("failed to change password")
+            UserFinds::UpdatePassword(new_pwd, _username) => { // change password
+                let targeted_user = users.filter(schema::users::username.eq(&_username))
+                    .or_filter(schema::users::email.eq(&_username));
+                diesel::update(targeted_user).set(schema::users::password.eq(&new_pwd.new_password)).
+                    load::<User>(conn).expect("failed to change password")
             }
             UserFinds::InsertUser(new_user) => { // create a new user
                 let dupliacted_username_or_email = users
                     .filter(schema::users::username.eq(&new_user.username)) // user name or email must be unique
                     .or_filter(schema::users::email.eq(&new_user.email))
                     .load::<User>(conn).unwrap();
+                
                 if dupliacted_username_or_email.len().eq(&0) {
                     diesel::insert_into(users)
                         .values(&new_user)
@@ -144,11 +143,11 @@ impl Handler<UserFinds> for DBPool {
             UserFinds::CheckLoginUser(user_info) => { // login by email or username
                 let targeted_user = users.filter(schema::users::username.eq(&user_info.username))
                     .or_filter(schema::users::email.eq(&user_info.username));
-                diesel::update(targeted_user).set(schema::users::last_login.eq(&Some(SystemTime::now()))).
+                diesel::update(targeted_user).set(schema::users::last_login.eq(&Some(Utc::now().naive_utc()))).
                     load::<User>(conn).expect("failed to update login time")
             }
         };
         
-        Ok(post_items.pop().unwrap())
+        Ok(post_items)
     }
 }

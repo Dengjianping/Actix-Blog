@@ -3,12 +3,14 @@
 // https://doc.rust-lang.org/reference/procedural-macros.html
 
 extern crate proc_macro;
-extern crate proc_macro2;
-extern crate syn;
-#[macro_use] extern crate quote;
+// extern crate proc_macro2;
+// extern crate syn;
+// #[macro_use] extern crate quote;
+
 
 // https://doc.rust-lang.org/1.30.0/proc_macro/
 use proc_macro::TokenStream;
+use quote::quote;
 // use proc_macro2::TokenStream;
 
 // remember to add 'full' feature for sys in toml file, 
@@ -25,22 +27,26 @@ use syn::{ /*DeriveInput,*/ ItemFn, FnDecl, FnArg, Ident };
 #[proc_macro_attribute]
 pub fn builtin_decorator(attr: TokenStream, func: TokenStream) -> TokenStream { 
     // cannot use proc_macro2::TokenStream now
-    let func = func.into();
+    // let func = func.into();
     let attr = parse_attr(attr);
 
     // https://docs.rs/syn/0.15.21/syn/struct.ItemFn.html
+    // let item_fn: ItemFn = syn::parse(func).expect("Input is not a function");
     let item_fn: ItemFn = syn::parse(func).expect("Input is not a function");
     let vis = &item_fn.vis; // like pub
     let ident = &item_fn.ident; // variable or function name ,like x, add_method
     let block = &item_fn.block; // { some statement or expression here }
 
-    let decl: FnDecl = *item_fn.decl; // https://docs.rs/syn/0.15.21/syn/struct.FnDecl.html
+    // https://docs.rs/syn/0.15.21/syn/struct.FnDecl.html
+    // Header of a function declaration, without including the body.
+    let decl: FnDecl = *item_fn.decl; 
     let inputs = &decl.inputs;
     let output = &decl.output;
 
     let input_values: Vec<_> = inputs
         .iter()
         .map(|arg| match arg {
+            // https://docs.rs/syn/0.15.21/syn/enum.FnArg.html#variant.Captured
             &FnArg::Captured(ref val) => &val.pat,
             _ => unreachable!(""),
         })
@@ -54,7 +60,9 @@ pub fn builtin_decorator(attr: TokenStream, func: TokenStream) -> TokenStream {
             fn deco_internal(#inputs) #output #block
         }
     };
-    caller.into()
+    // build a TokenStream
+    // https://docs.rs/quote/0.6.10/quote/macro.quote.html
+    caller.into() 
 }
 
 fn parse_attr(attr: TokenStream) -> Ident {

@@ -1,6 +1,6 @@
 #![macro_use]
-#[macro_export]
-// mod macros {
+#![macro_export]
+// mod blog {
     // create a struct by macro
 macro_rules! new_struct {
     // struct like this
@@ -32,4 +32,7 @@ macro_rules! new_struct {
         );
     };
 }
+
+
+// macro_rules! http_err_handle {
 // }
