@@ -1,8 +1,10 @@
 [package]
 name = "actix_blog"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Dengjianping <djptux@gmail.com>"]
 edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
 proc-macro = true
@@ -13,40 +15,46 @@ name = "main"
 doc = false
 path = "src/main.rs"
 
-[features]
-default = ["http1"]
-http1 = []
-http2 = []
-
 [dependencies]
-diesel = { version = "1.3.3", features = ["postgres", "r2d2", "chrono"] }
-diesel_codegen = { version = "*", features = ["postgres"] }
-dotenv = "0.10.1"
-tera = "0.11.20" # template engine
+# web framework
+actix-web = { version = "1.0", features = ["ssl"] }
+actix = "0.8"
+actix-session = "0.1"
+actix-files = "0.1"
+actix-rt = "0.2"
+openssl = { version = "0.10", features = ["v110"] }
+futures = "0.1"
+bcrypt = "0.5"
+itertools = "0.8"
+
+# error handler
+failure = "0.1"
+
+# database orm
+diesel = { version = "1.4", features = ["postgres", "r2d2", "chrono"] }
+
+# for serilize and diserialize
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-bcrypt = "0.2" # hbcrypt = "0.2"ash password
-actix = "0.7"
-actix-web = { version = "0.7.16", features = ["ssl"] }
-openssl = { version="0.10" }
-env_logger = "0.5"
-lazy_static = "1.1"
-futures = "0.1"
-tokio = "0.1"
-chrono = { version = "0.4.6", features = ["serde", "rustc-serialize"] }
-regex = "1.1"
-itertools = "0.8"
-toml = "0.4"
-num_cpus = "1.9"
 
+num_cpus = "1.10"
+chrono = { version = "0.4", features = ["serde", "rustc-serialize"] }
+toml = "0.5"
+regex = "1.1"
+lazy_static = "1.3"
+env_logger = "0.6"
+dotenv = "0.14"
+
+# template engine
+# tera = "1.0.0-beta.12"
+tera = "0.11"
+
+# for code genration, proc macro
 syn = { version = "0.15", features = ["full", "extra-traits"] }
 quote = "0.6"
 proc-macro2 = "0.4"
 
-# a book named 'Rust High Performance' talks about how to optimize rust code.
-# some basic optimization for release build
-# https://doc.rust-lang.org/cargo/reference/manifest.html#the-profile-sections
 [profile.release]
-opt-level = 2 # threr're three levels for optimizing rust code
+opt-level = 3
 lto = true # optimization for Link-Time Optimizations
