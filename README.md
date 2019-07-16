@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.com/Dengjianping/Actix-Blog.svg?branch=master)](https://travis-ci.com/Dengjianping/Actix-Blog)
 
 ## About this project
-I' a new rustacean, using actix-web to build a personal blog right now, and trying to use the features in rust(learning by practice), so maybe I'll modify these code frequently(but based on the latest stable rust).
+There're two branches, the **master** uses actix-web 1.0, **v0.7** uses actix-web 0.7.x.
 
 ## Thanks to these resources
 - ### Front-End
