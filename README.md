@@ -24,7 +24,7 @@ There're two branches, the **master** uses actix-web 1.0, **v0.7** uses actix-we
 3. HTML template engine(rust based): **tera**
     - [official site](https://tera.netlify.com/)
     - [github](https://github.com/Keats/tera)
-    - [doc](https://docs.rs/tera/0.11.20/tera/)
+    - [doc](https://docs.rs/tera/1.0.0-beta.13/tera/)
 
 ## Requirements
 1. Better use stable [**rust**](https://www.rust-lang.org/). (2018 edition, though travis compiles the project on nightly and beta one)
