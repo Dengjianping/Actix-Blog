@@ -3,21 +3,11 @@
 // https://doc.rust-lang.org/reference/procedural-macros.html
 
 extern crate proc_macro;
-extern crate proc_macro2;
-extern crate syn;
-#[macro_use] extern crate quote;
-
-
-// https://doc.rust-lang.org/1.30.0/proc_macro/
 use proc_macro::TokenStream;
-// use quote::quote;
-// use proc_macro2::TokenStream;
-
+use quote::{ quote, ToTokens };
+use proc_macro2::{Ident, Span};
 // remember to add 'full' feature for sys in toml file, 
-// or you'll get error like "unresolved imports `syn::ItemFn`, `syn::FnDecl`, `syn::FnArg`""
-use syn::{ /*DeriveInput,*/ ItemFn, FnDecl, FnArg, Ident }; 
-// MacroInput is obsoloted, use DeriveInput
-// https://github.com/mystor/book/commit/94946f20ce3eda2a374e48f8e8fa27c4deda21b6
+use syn::{ parse_macro_input, NestedMeta, Meta, FnDecl, ItemFn, Pat, FnArg, AttributeArgs };
 
 
 // remenber to add 
@@ -25,50 +15,105 @@ use syn::{ /*DeriveInput,*/ ItemFn, FnDecl, FnArg, Ident };
 // proc-macro = true
 // in your toml file
 #[proc_macro_attribute]
-pub fn builtin_decorator(attr: TokenStream, func: TokenStream) -> TokenStream { 
-    // cannot use proc_macro2::TokenStream now
-    // let func = func.into();
-    let attr = parse_attr(attr);
+pub fn login_required(_: TokenStream, func: TokenStream) -> TokenStream {
+    // _ means there's no attribute here to pass and handle.
+    let func = parse_macro_input!(func as ItemFn);
+    let func_vis = &func.vis; // like pub
+    let func_name = &func.ident; // function name
+    let func_block = &func.block; // { some statement or expression here }
+    let func_decl = func.decl;
 
-    // https://docs.rs/syn/0.15.21/syn/struct.ItemFn.html
-    // let item_fn: ItemFn = syn::parse(func).expect("Input is not a function");
-    let item_fn: ItemFn = syn::parse(func).expect("Input is not a function");
-    let vis = &item_fn.vis; // like pub
-    let ident = &item_fn.ident; // variable or function name ,like x, add_method
-    let block = &item_fn.block; // { some statement or expression here }
-
-    // https://docs.rs/syn/0.15.21/syn/struct.FnDecl.html
-    // Header of a function declaration, without including the body.
-    let decl: FnDecl = *item_fn.decl; 
-    let inputs = &decl.inputs;
-    let output = &decl.output;
-
-    let input_values: Vec<_> = inputs
-        .iter()
-        .map(|arg| match arg {
-            // https://docs.rs/syn/0.15.21/syn/enum.FnArg.html#variant.Captured
-            &FnArg::Captured(ref val) => &val.pat,
-            _ => unreachable!(""),
-        })
-        .collect();
-
+    let func_generics = &func_decl.generics;
+    let func_inputs = &func_decl.inputs;
+    let func_output = &func_decl.output;
+    
+    let params: Vec<_> = func_inputs.iter().filter_map(|i| {
+        match i {
+            // https://docs.rs/syn/0.15.26/syn/enum.Pat.html
+            FnArg::Captured(ref val) => {
+                //dbg!(&i);
+                let identity_type = val.ty.clone().into_token_stream();
+                let identity_type_name = identity_type.to_string();
+                if identity_type_name.eq("Identity") {
+                    Some((&val.pat, identity_type))
+                } else {
+                    None
+                }
+            }
+            _ => unreachable!("it's not gonna happen."),
+        }
+    }).collect();
+    let (identity_param, identity_type) = params.get(0).unwrap();
+    
     let caller = quote!{
-        #vis fn #ident(#inputs) #output {
-            let f = #attr(deco_internal);
-            return f(#(#input_values,) *);
-
-            fn deco_internal(#inputs) #output #block
+        // rebuild the function, add a func named is_expired to check user login session expire or not.
+        #func_vis fn #func_name #func_generics(#func_inputs) #func_output {
+            fn is_expired(#identity_param: &#identity_type) -> bool {
+                if let Some(_) = #identity_param.identity() {
+                    println!("identity is not expired");
+                    false
+                } else {
+                    println!("already expired");
+                    true
+                }
+            }
+            
+            if is_expired(&#identity_param) {
+                FutErr(ErrorKind::IdenttifyExpiredError)
+            } else {
+                #func_block
+            }
         }
     };
+    
     // build a TokenStream
     // https://docs.rs/quote/0.6.10/quote/macro.quote.html
     caller.into() 
 }
 
-fn parse_attr(attr: TokenStream) -> Ident {
-    // let pat: &[_] = &['"', '(', ')', ' ']; // the same effect as the comming line
-    let pat: &[_] = &['=', ' ', '"'][..];
-    let s = attr.to_string().trim_matches(pat).to_string();
-    // use proc_macro2 Idet, quote doesn't implement for proc_macro Ident
-    proc_macro2::Ident::new(&s, proc_macro2::Span::call_site()) 
+
+// this proc-macro is not ergonomic to use, I have to define a function to receive
+// a closure as parameter, but this closure has uncertain count of parameters.
+// how to use, see branch 0.7, and I have made some improvements on this proc-macro.
+#[proc_macro_attribute]
+pub fn builtin_decorator(attr: TokenStream, func: TokenStream) -> TokenStream {
+    let attr = parse_macro_input!(attr as AttributeArgs);
+    // only on attribute here
+    let attr_ident = match attr.get(0).as_ref().unwrap() {
+        NestedMeta::Meta(Meta::Word(ref attr_ident)) => attr_ident.clone(),
+        _ => unreachable!("it not gonna happen."),
+    };
+    
+    let func = parse_macro_input!(func as ItemFn);
+    let func_vis = &func.vis; // like pub
+    let func_name = &func.ident; // function name
+    let func_block = &func.block; // { some statement or expression here }
+    let func_decl = func.decl; 
+    
+    let func_generics = &func_decl.generics;
+    let func_inputs = &func_decl.inputs;
+    let func_output = &func_decl.output;
+
+    let params: Vec<_> = func_inputs.iter().map(|i| {
+        match i {
+            // https://docs.rs/syn/0.15.26/syn/enum.Pat.html
+            FnArg::Captured(ref val) => &val.pat, // cannot move val out of pat，use ref or val.pat.clone()
+            _ => unreachable!("it's not gonna happen."),
+        }
+    }).collect();
+    
+    let caller = quote!{
+        #func_vis fn #func_name #func_generics(#func_inputs) #func_output {
+            fn rebuild_func #func_generics(#func_inputs) #func_output #func_block
+            
+            let f = #attr_ident(rebuild_func);
+
+            // may have couple of parameters, #(#params,) *
+            f(#(#params,) *)
+        }
+    };
+    
+    // build a TokenStream
+    // https://docs.rs/quote/0.6.10/quote/macro.quote.html
+    caller.into() 
 }
