@@ -59,7 +59,7 @@
                 
                 <!-- Pager -->
                 <div class="clearfix">
-                    {% if last_page or posts | length < 5 %}
+                    {% if last_page %}
                     <a class="btn btn-secondary float-right">Last Page &rarr;</a>
                     {% else %}
                     <a class="btn btn-primary float-right" href="/admin/index/page/{{ page_num }}/">Older Posts &rarr;</a>

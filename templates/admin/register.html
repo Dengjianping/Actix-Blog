@@ -24,7 +24,7 @@
                     data: JSON.stringify({'username': $('#username').val()}), // must use stringify to serialize json data
                     timeout: 10000,
                     success: function(data) {
-                        if (!data) {
+                        if (data) {
                             $("#exist_user_prompt").show();
                         }
                         }
@@ -42,7 +42,7 @@
                     data: JSON.stringify({'email': $('#email').val()}), // must use stringify to serialize json data
                     timeout: 10000,
                     success: function(data) {
-                        if (!data) {
+                        if (data) {
                             $("#exist_email_prompt").show();
                         }
                     }

@@ -24,7 +24,7 @@
                     data: JSON.stringify({'username': $('#inputEmail').val()}), // must use stringify to serialize json data
                     timeout: 10000,
                     success: function(data) {
-                        if (data) {
+                        if (!data) {
                             $("#wrong_user_prompt").show();
                         }
                         }
