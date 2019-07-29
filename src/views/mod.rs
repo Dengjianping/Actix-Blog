@@ -1,2 +1,2 @@
-pub mod auth;
-pub mod post;
+pub(crate) mod auth;
+pub(crate) mod post;
