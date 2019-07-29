@@ -1,8 +1,10 @@
-use chrono::prelude::*;
-use crate::models::schema::contacts;
-use crate::utils::utils::DBPool;
-use diesel::{ prelude::*, pg::PgConnection, result::Error as DBError, associations::Identifiable };
+use actix_web::web::Data;
+use chrono::{ Utc, NaiveDateTime };
+use diesel::prelude::*;
 use serde_derive::{ Deserialize, Serialize };
+
+use crate::utils::utils::PgPool;
+use super::schema::{ self, contacts };
 
 
 #[derive(Queryable, Serialize, Deserialize, AsChangeset, Debug)]
@@ -15,7 +17,6 @@ pub struct Contact {
     pub committed_time: Option<NaiveDateTime>,
 }
 
-
 #[derive(Insertable, Queryable, Serialize, Deserialize, AsChangeset, Debug)]
 #[table_name="contacts"]
 pub struct NewContact {
@@ -25,7 +26,6 @@ pub struct NewContact {
     pub committed_time: Option<NaiveDateTime>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CreateContact {
     pub tourist_name: String,
@@ -33,9 +33,8 @@ pub struct CreateContact {
     pub message: String,
 }
 
-
 impl NewContact {
-    pub fn new(new_contact: &CreateContact) -> NewContact {
+    pub fn new(new_contact: &CreateContact) -> Self {
         NewContact {
             tourist_name: new_contact.tourist_name.clone(),
             email: new_contact.email.clone(),
@@ -45,36 +44,22 @@ impl NewContact {
     }
 }
 
+pub(crate) struct ContactOperation;
 
-pub enum ContactHandle {
-    AllContacts,
-    InsertContact(NewContact),
-}
-
-
-impl actix::Message for ContactHandle {
-    type Result = Result<Vec<Contact>, DBError>;
-}
-
-
-impl actix::Handler<ContactHandle> for DBPool {
-    type Result = Result<Vec<Contact>, DBError>;
-
-    fn handle(&mut self, msg: ContactHandle, _: &mut Self::Context) -> Self::Result {
-        use crate::models::schema::contacts::dsl::*; // contacts imported
-        use crate::models::schema;
-
-        let conn: &PgConnection = &self.conn;
-        let contact_items = match msg {
-            ContactHandle::AllContacts => {
-                contacts.order(schema::contacts::id.desc()).load::<Contact>(conn).expect("failed to load all contacts.")
-            }
-            ContactHandle::InsertContact(new_contact) => {
-                diesel::insert_into(contacts).values(&new_contact).execute(conn).expect("failed to insert a new contact");
-                contacts.filter(schema::contacts::tourist_name.eq(&new_contact.tourist_name))
-                    .load::<Contact>(conn).expect("failed to load current contact.")
-            }
-        };
-        Ok(contact_items)
+impl ContactOperation {
+    pub(crate) fn insert_contact(new_contact: NewContact, pool: &Data<PgPool>) -> Result<(), failure::Error> {
+        use super::schema::contacts::dsl::*;
+        let conn = &*pool.get()?;
+        
+        diesel::insert_into(contacts).values(&new_contact).execute(conn)?;
+        Ok(())
+    }
+    
+    pub(crate) fn get_all_contacts(pool: &Data<PgPool>) -> Result<Vec<Contact>, failure::Error> {
+        use super::schema::contacts::dsl::*;
+        let conn = &*pool.get()?;
+        
+        let all_contacts = contacts.order(schema::contacts::id.desc()).load::<Contact>(conn)?;
+        Ok(all_contacts)
     }
 }
