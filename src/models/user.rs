@@ -1,153 +1,149 @@
-use bcrypt;
-use chrono::prelude::*;
-use crate::models::schema::users;
-use crate::utils::utils::DBPool;
-use diesel::{ prelude::*, pg::PgConnection, result::Error as DBError, associations::Identifiable };
-use std::time::SystemTime;
+use actix_web::web::{ Form, Data };
+use chrono::{ NaiveDateTime, Utc };
+use diesel::prelude::*;
 use serde_derive::{ Deserialize, Serialize };
+use std::convert::TryFrom;
 
+use crate::utils::utils::{ Status, PgPool };
+use super::schema::{ self, users };
 
 #[derive(Queryable, Debug, Serialize, Deserialize, Identifiable)]
-pub struct User {
-    pub id: i32,
-    pub password: String,
-    pub username: String,
-    pub first_name: String,
-    pub last_name: String,
-    pub email: String,
-    pub is_superuser: bool,
-    pub is_staff: bool,
-    pub is_active: bool,
-    pub last_login: Option<NaiveDateTime>,
-    pub date_joined: Option<NaiveDateTime>,
+pub(crate) struct User {
+    pub(crate) id: i32,
+    pub(crate) password: String,
+    pub(crate) username: String,
+    pub(crate) first_name: String,
+    pub(crate) last_name: String,
+    pub(crate) email: String,
+    pub(crate) is_superuser: bool,
+    pub(crate) is_staff: bool,
+    pub(crate) is_active: bool,
+    pub(crate) last_login: Option<NaiveDateTime>,
+    pub(crate) date_joined: Option<NaiveDateTime>,
 }
-
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]
 #[table_name = "users"]
-pub struct NewUser {
-    pub username: String,
-    pub password: String,
-    pub first_name: String,
-    pub last_name: String,
-    pub email: String,
-    pub is_staff: bool,
-    pub last_login: Option<NaiveDateTime>,
-    pub date_joined: Option<NaiveDateTime>,
+pub(crate) struct NewUser {
+    pub(crate) username: String,
+    pub(crate) password: String,
+    pub(crate) first_name: String,
+    pub(crate) last_name: String,
+    pub(crate) email: String,
+    pub(crate) is_staff: bool,
+    pub(crate) last_login: Option<NaiveDateTime>,
+    pub(crate) date_joined: Option<NaiveDateTime>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub(crate) struct LoginUser {
+    pub(crate) username: String,
+    pub(crate) password: String,
+}
 
-impl From<actix_web::Form<CreateUser>> for NewUser {
-    fn from(user: actix_web::Form<CreateUser>) -> Self {
-        NewUser{
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub(crate) struct CreateUser {
+    pub(crate) username: String,
+    pub(crate) password: String,
+    pub(crate) first_name: String,
+    pub(crate) last_name: String,
+    pub(crate) email: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub(crate) struct PasswordChange {
+    pub(crate) old_password: String,
+    pub(crate) new_password: String,
+}
+
+impl TryFrom<Form<CreateUser>> for NewUser {
+    type Error = failure::Error;
+    
+    fn try_from(user: Form<CreateUser>) -> Result<Self, Self::Error> {
+        let new_user = NewUser {
             username: user.username.clone(), 
-            password: bcrypt::hash(&user.password, bcrypt::DEFAULT_COST).expect("Failed to hash the password"), 
+            password: bcrypt::hash(&user.password, bcrypt::DEFAULT_COST)?, 
             first_name: user.first_name.clone(), 
             last_name: user.last_name.clone(), 
             email: user.email.clone(),
             is_staff: false,
             last_login: Some(Utc::now().naive_utc()),
             date_joined: Some(Utc::now().naive_utc()),
-        }
+        };
+        Ok(new_user)
     }
 }
 
+pub(crate) struct UserOperation;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct LoginUser {
-    pub username: String,
-    pub password: String,
-}
-
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct CreateUser {
-    pub username: String,
-    pub password: String,
-    pub first_name: String,
-    pub last_name: String,
-    pub email: String,
-}
-
-
-impl actix::Actor for DBPool {
-    type Context = actix::SyncContext<Self>;
-}
-
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct PasswordChange {
-    pub old_password: String,
-    pub new_password: String,
-}
-
-
-pub enum UserFinds {
-    ID(i32),
-    UserName(String),
-    Email(String),
-    UpdatePassword(PasswordChange, String), // this string store username or email
-    InsertUser(NewUser),
-    CheckLoginUser(LoginUser),
-}
-
-impl actix::Message for UserFinds {
-    type Result = Result<Vec<User>, DBError>;
-}
-
-impl actix::Handler<UserFinds> for DBPool {
-    type Result = Result<Vec<User>, DBError>;
-
-    fn handle(&mut self, msg: UserFinds, _: &mut Self::Context) -> Self::Result {
-        use crate::models::schema::users::dsl::*; // users imported
-        use crate::models::schema;
-
-        let conn: &PgConnection = &self.conn;
-        let post_items = match msg {
-            UserFinds::ID(idx) => { // find user by id
-                users.filter(schema::users::id.eq(&idx)).load::<User>(conn)
-                    .expect("failed to load users")
-            }
-            UserFinds::UserName(user) => { // find user by username
-                users.filter(schema::users::username.eq(&user)).load::<User>(conn)
-                    .expect("failed to load posts")
-            }
-            UserFinds::Email(mail) => { // find user by email
-                users.filter(schema::users::email.eq(&mail)).load::<User>(conn)
-                    .expect("failed to load posts")
-            }
-            UserFinds::UpdatePassword(new_pwd, _username) => { // change password
-                let targeted_user = users.filter(schema::users::username.eq(&_username))
-                    .or_filter(schema::users::email.eq(&_username));
-                diesel::update(targeted_user).set(schema::users::password.eq(&new_pwd.new_password)).
-                    load::<User>(conn).expect("failed to change password")
-            }
-            UserFinds::InsertUser(new_user) => { // create a new user
-                let dupliacted_username_or_email = users
-                    .filter(schema::users::username.eq(&new_user.username)) // user name or email must be unique
-                    .or_filter(schema::users::email.eq(&new_user.email))
-                    .load::<User>(conn).unwrap();
-                
-                if dupliacted_username_or_email.len().eq(&0) {
-                    diesel::insert_into(users)
-                        .values(&new_user)
-                        .execute(conn)
-                        .expect("failed to insert a new user");
-                    users.filter(schema::users::username.eq(&new_user.username)).load::<User>(conn).unwrap()
-                } else {
-                    println!("duplicated username");
-                    dupliacted_username_or_email
-                    // users.filter(schema::users::username.eq(&new_user.username)).load::<User>(conn).unwrap()
-                }
-            }
-            UserFinds::CheckLoginUser(user_info) => { // login by email or username
-                let targeted_user = users.filter(schema::users::username.eq(&user_info.username))
-                    .or_filter(schema::users::email.eq(&user_info.username));
-                diesel::update(targeted_user).set(schema::users::last_login.eq(&Some(Utc::now().naive_utc()))).
-                    load::<User>(conn).expect("failed to update login time")
-            }
-        };
+impl UserOperation {
+    pub(crate) fn get_user_by_name(user_name: &str, pool: &Data<PgPool>) -> Result<Option<User>, failure::Error> {
+        use schema::users::dsl::*;
+        let conn = &*pool.get()?;
         
-        Ok(post_items)
+        // either email or username
+        let user_filter = users.filter(schema::users::username.eq(&user_name))
+                                 .or_filter(schema::users::email.eq(&user_name));
+        
+        // if found, update the time of last login
+        let mut user_found = diesel::update(user_filter).set(schema::users::last_login.eq(&Some(Utc::now().naive_utc()))).load::<User>(conn)?;
+        Ok(user_found.pop())
+    }
+    
+    pub(crate) fn get_user_by_email(email_addr: &str, pool: &Data<PgPool>) -> Result<Option<User>, failure::Error> {
+        use schema::users::dsl::*;
+        let conn = &*pool.get()?;
+        
+        let mut user_found = users.filter(schema::users::email.eq(&email_addr)).load::<User>(conn)?;
+        Ok(user_found.pop())
+    }
+    
+    #[allow(dead_code)]
+    pub(crate) fn get_user_by_id(uid: i32, pool: &Data<PgPool>) -> Result<Option<User>, failure::Error> {
+        use schema::users::dsl::*;
+        let conn = &*pool.get()?;
+        
+        let mut user_found = users.filter(schema::users::id.eq(&uid)).load::<User>(conn)?;
+        Ok(user_found.pop())
+    }
+    
+    pub(crate) fn insert_user(new_user: &NewUser, pool: &Data<PgPool>) -> Result<Status, failure::Error> {
+        use schema::users::dsl::*;
+        let conn = &*pool.get()?;
+        
+        // user name or email must be unique
+        let dupliacted_username_or_email = users.filter(schema::users::username.eq(&new_user.username)) 
+                                                .or_filter(schema::users::email.eq(&new_user.email))
+                                                .load::<User>(conn)?;
+        
+        if dupliacted_username_or_email.len().eq(&0) {
+            diesel::insert_into(users).values(new_user).execute(conn)?;
+            Ok(Status::Success)
+        } else {
+            Ok(Status::Failure)
+        }
+    }
+    
+    pub(crate) fn modify_password(new_password: &str, user_name: &str, pool: &Data<PgPool>) -> Result<Status, failure::Error> {
+        use schema::users::dsl::*;
+        let conn = &*pool.get()?;
+        
+        // find the current user
+        let user_filter = users.filter(schema::users::username.eq(&user_name))
+                                 .or_filter(schema::users::email.eq(&user_name));
+        diesel::update(user_filter).set(schema::users::password.eq(new_password)).load::<User>(conn)?;
+        Ok(Status::Success)
+    }
+    
+    pub(crate) fn get_id_by_username(user_name: &str, pool: &Data<PgPool>) -> Result<i32, failure::Error> {
+        use schema::users::dsl::*;
+        let conn = &*pool.get()?;
+        
+        let mut user_found = users.filter(schema::users::username.eq(&user_name))
+                               .or_filter(schema::users::email.eq(&user_name))
+                               .load::<User>(conn)?;
+        // let uid = user_found.pop().ok_or("didn't find this user in database".to_string())?;
+        let uid = user_found.pop().ok_or(failure::err_msg("didn't find this user in database"))?;
+        Ok(uid.id)
     }
 }
