@@ -16,7 +16,7 @@ doc = false
 path = "src/main.rs"
 
 [features]
-default = ["http2"]
+default = ["http1"]
 http1 = []
 http2 = []
 
