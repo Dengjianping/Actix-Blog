@@ -1,158 +1,113 @@
-#![allow(unused, unknown_lints, proc_macro_derive_resolution_fallback)]
-//#![warn(unused_imports, unused)]
-// if there is not proc_macro_derive_resolution_fallback imported, an error will occur
-// like names from parent modules are not accessible without an explicit import
-// note: for more information, see issue #50504 <https://github.com/rust-lang/rust/issues/50504>
-// issue: https://github.com/diesel-rs/diesel/issues/1785
+#[macro_use]
+extern crate diesel;
 
-// proc-macro still needs extern crate in 2018 edition,
-// in diesel, like 'table_name' and 'belongs_to'
-#[macro_use] extern crate diesel;
+use actix_files as fs;
+use actix_session::CookieSession;
+use actix_identity::{ CookieIdentityPolicy, IdentityService };
+use actix_web::{ web, App, HttpServer, middleware };
 
 
-// because a macro named 'new_struct' is in utils, so it need be place this line above others module
-// or they will not see that macro.
-#[macro_use] pub mod utils;
-pub mod models;
-pub mod views;
+#[macro_use]
+mod utils;
+mod views;
+mod models;
+mod error_types;
 
-use actix_web::{ server, App, middleware, http::{ self, NormalizePath }, fs,
-                 middleware::session::{ SessionStorage, CookieSessionBackend }};
-use chrono::prelude::*;
-use crate::utils::utils::{ DBPool, DBState, establish_connection, blog_config, load_ssl };
-use std::{ env, fs::File, path::Path };
+use crate::utils::utils::{ db_pool, blog_config, load_ssl };
 
+fn main() -> Result<(), failure::Error> {
+    let sys = actix_rt::System::new("actix-blog"); // create a actix system
 
-fn main() {
-    let config = blog_config().unwrap();
+    let config = &blog_config()?["production"];
+    let address = config["address"].as_str().ok_or(failure::err_msg("no address in the section"))?;
+    let port = config["port"].as_integer().ok_or(failure::err_msg("no port in the section"))?;
+    let workers = config["workers"].as_integer().ok_or(failure::err_msg("no workers in the section"))? as usize;
+    let log_level = config["log"].as_str().ok_or(failure::err_msg("no specified log level in the section"))?;
     
-    let address = config["address"].as_str().unwrap();
-    let port = config["port"].as_integer().unwrap();
-    let mut workers = config["workers"].as_integer().unwrap() as usize;
-    let log_level = config["log"].as_str().unwrap();
-
-    env::set_var("RUST_LOG", format!("actix_web={}", log_level)); // log level
+    std::env::set_var("RUST_LOG", format!("actix_server={},actix_web={}", log_level, log_level)); // log level
     env_logger::init(); // init a log
-    let sys = actix::System::new("actix-blog"); // start a system
     
-    workers = num_cpus::get();
+    let pool = db_pool()?;
     
-    let addr = actix::SyncArbiter::start(workers, move || DBPool{ conn: establish_connection() });
+    let blog_server = HttpServer::new( move || 
+        App::new().data(pool.clone())
+            .wrap(middleware::Logger::default())
+            .wrap(middleware::NormalizePath::default())
+            .wrap(
+                CookieSession::signed(&[0; 32])
+                    .name("post_session")
+                    .path("/")
+                    .secure(false)
+                    .max_age(60 * 60i64)
+            )
+            .wrap(
+                IdentityService::new(
+                    CookieIdentityPolicy::new(&[0;32])
+                        .name("admin")
+                        .path("/admin")
+                        .max_age(60 * 60i64)
+                        .secure(false)
+                )
+            )
+            // css, js files loading
+            .service(fs::Files::new("/static", "static/").show_files_listing())
+            .service(
+                web::scope("/admin")
+                    .service(web::resource("/").route(web::get().to_async(views::auth::redirect_admin)))
+                    .service(web::resource("/login/").route(web::get().to_async(views::auth::login))
+                                                     .route(web::post().to_async(views::auth::handle_login))
+                    )
+                    .service(web::resource("/user_exist/").route(web::post().to_async(views::auth::user_exist)))
+                    .service(web::resource("/dashboard/").route(web::post().to_async(views::auth::dashboard))
+                                                         .route(web::get().to_async(views::auth::dashboard))
+                    )
+                    .service(web::resource("/all_post/").route(web::get().to_async(views::auth::show_all_posts_by_author)))
+                    .service(web::resource("/today_comments/").route(web::get().to_async(views::auth::today_comments)))
+                    .service(web::resource("/all_guests_messages/").route(web::get().to_async(views::auth::all_guests_messages)))
+                    .service(web::resource("/about_self/").route(web::get().to_async(views::auth::about_self)))
+                    .service(web::resource("/logout/").route(web::get().to_async(views::auth::logout)))
+                    .service(web::resource("/write_post/").route(web::get().to_async(views::auth::write_post))
+                                                          .route(web::post().to_async(views::auth::submit_post))
+                    )
+                    .service(web::resource("/register/").route(web::get().to_async(views::auth::register))
+                                                        .route(web::post().to_async(views::auth::handle_registration))
+                    )
+                    .service(web::resource("/email_exist/").route(web::post().to_async(views::auth::email_exist)))
+                    .service(web::resource("/reset_password/").route(web::get().to_async(views::auth::reset_password))
+                                                              .route(web::post().to_async(views::auth::save_changed_password))
+                    )
+                    .service(web::resource("/{title}/").route(web::get().to_async(views::auth::modify_post))
+                                                       .route(web::post().to_async(views::auth::save_modified_post))
+                    )
+            )
+            .service(
+                web::scope("/")
+                    .service(web::resource("").route(web::get().to_async(views::post::show_all_posts)))
+                    .service(web::resource("/index/").route(web::get().to_async(views::post::show_all_posts)))
+                    .service(web::resource("/about/").route(web::get().to_async(views::post::about)))
+                    .service(web::resource("/contact/").route(web::get().to_async(views::post::contact)))
+                    .service(web::resource("/not_found/").route(web::get().to_async(views::post::page_404)))
+                    .service(web::resource("/all_posts/").route(web::get().to_async(views::post::all_posts)))
+                    .service(web::resource("/add_comment/").route(web::post().to_async(views::post::add_comment)))
+                    .service(web::resource("/user_likes/").route(web::post().to_async(views::post::user_likes)))
+                    .service(web::resource("/add_contact/").route(web::post().to_async(views::post::add_contact)))
+                    .service(web::resource("/search/").route(web::post().to_async(views::post::search)))
+                    .service(web::resource("/page/{page_num}/").route(web::get().to_async(views::post::pagination)))
+                    .service(web::resource("/article/{title}/").route(web::get().to_async(views::post::post_detail)))
+            )
+    )
+    .workers(workers);
     
-    let blog_server = server::new(move || {
-        vec![
-            App::with_state(DBState{ db: addr.clone() })
-                // enable logger
-                .middleware(middleware::Logger::default())
-                // .middleware(middleware::csrf::CsrfFilter::new())
-                .middleware(SessionStorage::new( // session setup
-                    CookieSessionBackend::signed(&[0; 32])
-                    .secure(false) // cannot be set as true
-                    //.max_age(Duration::from_secs(60 * 30)) // do not support std::time::Duration right now
-                    .max_age(chrono::Duration::minutes(30)) // session will expire after half an hour
-                ))
-                .handler("/static", fs::StaticFiles::new("static").unwrap()) // serve static files
-                .scope("/admin", |scope| {
-                    // admin path
-                    scope.default_resource(|r| r.h(NormalizePath::default())) // normalize the path
-                    .resource("/login/", |r| {
-                        r.method(http::Method::GET).with(views::auth::login);
-                        r.method(http::Method::POST).with(views::auth::handle_login);
-                        // r.method(http::Method::POST).with(views::auth::login);
-                    })
-                    .resource("/", |r| {
-                        r.method(http::Method::GET).with(views::auth::redirect_admin);
-                    })
-                    .resource("/user_exist/", |r| {
-                        r.method(http::Method::POST).with(views::auth::user_exist);
-                    })
-                    .resource("/email_exist/", |r| {
-                        r.method(http::Method::POST).with(views::auth::email_exist);
-                    })
-                    .resource("/logout/", |r| {
-                        r.method(http::Method::GET).with(views::auth::logout);
-                    })
-                    .resource("/register/", |r| {
-                        r.method(http::Method::GET).with(views::auth::register);
-                        r.method(http::Method::POST).with(views::auth::handle_registration);
-                    })
-                    .resource("/reset_password/", |r| {
-                        r.method(http::Method::GET).with(views::auth::reset_password);
-                        r.method(http::Method::POST).with(views::auth::save_changed_password);
-                    })
-                    .resource("/dashboard/", |r| {
-                        r.method(http::Method::GET).with(views::auth::dashboard);
-                        r.method(http::Method::POST).with(views::auth::dashboard);
-                    })
-                    .resource("/about_self/", |r| {
-                        r.method(http::Method::GET).with(views::auth::about_self);
-                    })
-                    .resource("/today_comments/", |r| {
-                        r.method(http::Method::GET).with(views::auth::today_comments);
-                    })
-                    .resource("/all_guests_messages/", |r| {
-                        r.method(http::Method::GET).with(views::auth::all_guests_messages);
-                    })
-                    .resource("/all_post/", |r| {
-                        r.method(http::Method::GET).with(views::auth::show_all_posts_by_author);
-                    })
-                    .resource("/write_post/", |r| {
-                        r.method(http::Method::GET).with(views::auth::write_post);
-                        r.method(http::Method::POST).with(views::auth::submit_post);
-                    })
-                    .resource("/{title}/", |r| {
-                        r.method(http::Method::GET).with(views::auth::modify_post);
-                        r.method(http::Method::POST).with(views::auth::save_modified_post);
-                    })
-                })
-                // public path
-                .scope("", |scope| {
-                    scope.default_resource(|r| r.h(NormalizePath::default())) // normalize the path
-                    .resource("/index/", |r| {
-                        r.method(http::Method::GET).with(views::post::show_all_posts);
-                    })
-                    .resource("/", |r| {
-                        r.method(http::Method::GET).with(views::post::redirect_index);
-                    })
-                    .resource("/article/{title}/", |r| {
-                        r.method(http::Method::GET).with(views::post::post_detail);
-                    })
-                    .resource("/page/{page_num}/", |r| {
-                        r.method(http::Method::GET).with(views::post::pagination);
-                    })
-                    .resource("/all_posts/", |r| {
-                        r.method(http::Method::GET).with(views::post::all_posts);
-                    })
-                    .resource("/about/", |r| {
-                        r.method(http::Method::GET).with(views::post::about);
-                    })
-                    .resource("/contact/", |r| {
-                        r.method(http::Method::GET).with(views::post::contact);
-                    })
-                    .resource("/add_contact/", |r| {
-                        r.method(http::Method::POST).with(views::post::add_contact);
-                    })
-                    .resource("/user_likes/", |r| {
-                        r.method(http::Method::POST).with(views::post::user_likes);
-                    })
-                    .resource("/not_found/", |r| {
-                        r.method(http::Method::POST).with(views::post::page_404);
-                    })
-                    .resource("/search/", |r| {
-                        r.method(http::Method::POST).with(views::post::search);
-                    })
-                    .resource("/add_comment/", |r| {
-                        r.method(http::Method::POST).with(views::post::add_comment);
-                    })
-                })
-        ]
-    });
-    
-    if cfg!(feature = "http2") {
-        blog_server.bind_ssl(format!("{}:{}", &address, &port), load_ssl()).unwrap().start();
-    } else {
-        blog_server.bind(format!("{}:{}", &address, &port)).unwrap().start();
+    // compile http1 capability if feature http1 enabled while http2 ignored
+    #[cfg(feature = "http1")]
+    {
+        blog_server.bind(format!("{}:{}", &address, &port))?.start();
     }
-    println!("Started http server: {}", format!("{}:{}", &address, &port));
-    let _ = sys.run();
+    
+    #[cfg(feature = "http2")]
+    {
+        blog_server.bind_ssl(format!("{}:{}", &address, &port), load_ssl()?)?.start();
+    }
+    
+    sys.run().map_err(failure::err_msg)
 }
