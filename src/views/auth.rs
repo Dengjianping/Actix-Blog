@@ -117,7 +117,7 @@ pub(crate) fn dashboard(
             Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
         }
     } else {
-        FutErr(ErrorKind::IdenttifyExpiredError)
+        FutErr(ErrorKind::IdentityExpiredError)
     }
 }
 
@@ -255,7 +255,7 @@ pub(crate) fn modify_post(
             Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
         }
     } else {
-        FutErr(ErrorKind::IdenttifyExpiredError)
+        FutErr(ErrorKind::IdentityExpiredError)
     }
 }
 

@@ -13,7 +13,7 @@ pub(crate) enum ErrorKind {
         String, // String => error message
     ),
     #[fail(display = "The identify is expired, you have to login again")]
-    IdenttifyExpiredError,
+    IdentityExpiredError,
     #[fail(display = "You might input a wrong password or {}, try again", _0)]
     PasswordVerificationError(
         String, // String => error message
@@ -31,7 +31,7 @@ impl ResponseError for ErrorKind {
             ErrorKind::TemplateError(e) => {
                 HttpResponse::Ok().content_type("text/html").body(e)
             }
-            ErrorKind::IdenttifyExpiredError => HttpResponse::TemporaryRedirect().header("Location", "/admin/login/").finish(),
+            ErrorKind::IdentityExpiredError => HttpResponse::TemporaryRedirect().header("Location", "/admin/login/").finish(),
             ErrorKind::PasswordVerificationError(e) => {
                 HttpResponse::Ok()
                     .content_type("text/html")
