@@ -1,5 +1,4 @@
 #![macro_use]
-#![macro_export]
 // mod blog {
     // create a struct by macro
 macro_rules! new_struct {
