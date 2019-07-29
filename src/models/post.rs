@@ -1,194 +1,153 @@
-use chrono::prelude::*;
-use crate::models::{ schema::posts, user::User, comment::Comment };
-use crate::utils::utils::DBPool;
-use diesel::{ prelude::*, pg::PgConnection, result::Error as DBError, associations::Identifiable };
+use actix_web::web::Data;
+use chrono::{ NaiveDateTime, Utc };
+use diesel::prelude::*;
 use serde_derive::{ Deserialize, Serialize };
 
+use crate::utils::utils::{ Status, PgPool };
+use super::{ schema::{ self, posts }, user::User };
 
-// QueryableByName for use sql_query that using raw sql expression
-// http://docs.diesel.rs/diesel/fn.sql_query.html
 #[derive(Queryable, Debug, Serialize, Deserialize, AsChangeset, Clone, Identifiable, Associations, QueryableByName)]
 #[table_name = "posts"]
 #[belongs_to(User)]
-pub struct Post {
-    pub id: i32,
-    pub title: String,
-    pub slug: String,
-    pub body: String,
-    pub publish: Option<NaiveDateTime>,
-    pub created: Option<NaiveDateTime>,
-    pub updated: Option<NaiveDateTime>,
-    pub status: String,
-    pub user_id: i32,
-    pub likes: i32,
+pub(crate) struct Post {
+    pub(crate) id: i32,
+    pub(crate) title: String,
+    pub(crate) slug: String,
+    pub(crate) body: String,
+    pub(crate) publish: Option<NaiveDateTime>,
+    pub(crate) created: Option<NaiveDateTime>,
+    pub(crate) updated: Option<NaiveDateTime>,
+    pub(crate) status: String,
+    pub(crate) user_id: i32,
+    pub(crate) likes: i32,
 }
 
 #[derive(Insertable, Serialize, Deserialize, Debug, AsChangeset)]
 #[table_name = "posts"]
-pub struct NewPost {
-    pub title: String,
-    pub slug: String,
-    pub body: String,
-    pub publish: Option<NaiveDateTime>,
-    pub created: Option<NaiveDateTime>,
-    pub updated: Option<NaiveDateTime>,
-    pub status: String,
-    pub user_id: i32,
-    pub likes: i32,
+pub(crate) struct NewPost {
+    pub(crate) title: String,
+    pub(crate) slug: String,
+    pub(crate) body: String,
+    pub(crate) publish: Option<NaiveDateTime>,
+    pub(crate) created: Option<NaiveDateTime>,
+    pub(crate) updated: Option<NaiveDateTime>,
+    pub(crate) status: String,
+    pub(crate) user_id: i32,
+    pub(crate) likes: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct SubmitPost {
-    pub title: String,
-    pub slug: String,
-    pub body: String,
-    pub status: String,
+pub(crate) struct SubmitPost {
+    pub(crate) title: String,
+    pub(crate) slug: String,
+    pub(crate) body: String,
+    pub(crate) status: String,
 }
 
 
 #[derive(Queryable, Serialize, Deserialize, AsChangeset, Debug)]
 #[table_name="posts"]
-pub struct UpdatedPost {
-    pub title: String,
-    pub slug: String,
-    pub body: String,
-    pub status: String,
-    pub updated: Option<NaiveDateTime>,
+pub(crate) struct UpdatedPost {
+    pub(crate) title: String,
+    pub(crate) slug: String,
+    pub(crate) body: String,
+    pub(crate) status: String,
+    pub(crate) updated: Option<NaiveDateTime>,
 }
 
 impl NewPost {
-    pub fn new(_title: &str, _slug: &str, _body: &str, _status: &str, _user_id: i32) -> Self {
+    pub(crate) fn new(new_post: &SubmitPost, uid: i32) -> Self {
         NewPost {
-            title: String::from(_title),
-            slug: String::from(_slug),
-            body: String::from(_body),
+            title: String::from(&new_post.title),
+            slug: String::from(&new_post.slug),
+            body: String::from(&new_post.body),
             publish: Some(Utc::now().naive_utc()),
             created: Some(Utc::now().naive_utc()),
             updated: Some(Utc::now().naive_utc()),
-            status: String::from(_status),
+            status: String::from(&new_post.status),
             likes: 0,
-            user_id: _user_id,
+            user_id: uid,
         }
     }
 }
 
-
-impl actix::Message for NewPost {
-    type Result = Result<Post, DBError>;
+#[allow(dead_code)]
+pub(crate) enum PostStatus {
+    All,
+    Draft, // draft
+    Published, // publish
 }
 
+// use a struct to organize the post operation in database
+pub(crate) struct PostOperation;
 
-impl actix::Handler<NewPost> for DBPool {
-    type Result = Result<Post, DBError>;
-
-    fn handle(&mut self, msg: NewPost, _: &mut Self::Context) -> Self::Result {
-        use crate::models::schema::posts::dsl::*; // posts imported
-        use crate::models::schema;
+impl PostOperation {
+    pub(crate) fn get_all_posts(post_status: PostStatus, pool: &Data<PgPool>) -> Result<Vec<Post>, failure::Error> {
+        use schema::posts::dsl::*;
+        let conn = &*pool.get()?;
         
-        let conn: &PgConnection = &self.conn;
-        let dupliacted_title = posts
-            .filter(schema::posts::title.eq(&msg.title)) // title must be unique
-            .load::<Post>(conn).unwrap();
-        if dupliacted_title.len() == 0 {
-            diesel::insert_into(posts)
-                .values(&msg)
-                .execute(conn)
-                .expect("failed to insert a new post");
-        } else {
-            println!("the title already in using, try another.");
-        }
-
-        let mut items = posts.filter(schema::posts::title.eq(&msg.title)).load::<Post>(conn)
-            .expect("failed to load a new post");
-        Ok(items.pop().unwrap())
-    }
-}
-
-
-pub enum PostFind {
-    ID(i32),
-    // store the ids related to posts, like vec![1,3]
-    // and now, rust doesn't support define enum as unsized type
-    // or I cound merge the first two lines
-    AllPost,
-    AllPostByAuthor(String),
-    AllPostByComment(Vec<i32>), 
-    Status(String),
-    Title(String),
-    UpdatePost(bool, String, UpdatedPost), // (true, old_title, change_part)
-    UpdateLikes(i32, i32), // (likes, post_id)
-}
-
-impl actix::Message for PostFind {
-    type Result = Result<Vec<Post>, DBError>;
-}
-
-impl actix::Handler<PostFind> for DBPool {
-    type Result = Result<Vec<Post>, DBError>;
-
-    fn handle(&mut self, msg: PostFind, _: &mut Self::Context) -> Self::Result {
-        use crate::models::schema::posts::dsl::*; // posts imported
-        use crate::models::schema::users::dsl::*; // users imported
-        use crate::models::schema::comments::dsl::*; // users imported
-        use crate::models::schema;
-
-        let conn: &PgConnection = &self.conn;
-        let post_items = match msg {
-            PostFind::ID(idx) => {
-                posts.filter(schema::posts::id.eq(&idx)).load::<Post>(conn)
-                    .expect("failed to load posts")
-            }
-            PostFind::AllPostByComment(ids) => {
-                use diesel::sql_query;
-                /*use diesel::sql_types::Bool;
-                use diesel::pg::Pg;
-                // http://docs.diesel.rs/diesel/expression/trait.BoxableExpression.html
-                type EXP = Box<BoxableExpression<schema::posts::table, Pg, SqlType=Bool>>;
-
-                let init_exp = Box::new(schema::posts::id.eq(ids[0].clone()));
-                let ex: EXP = ids.into_iter().fold(init_exp, |acc: EXP, i| Box::new(acc.and(schema::posts::id.eq(i.clone()))));
-                posts.filter(ex).load::<Post>(conn).expect("failed to load posts");*/
-
-                // become like [1, 2, 3, 4] => 1, 2, 3, 4
-                // and now, slice pattern doesn't meet the request, vec2tuple
-                let rm_brackets: String = format!("{:?}", ids).chars().filter(|c| c.ne(&'[') && c.ne(&']')).collect();
-                let raw_sql = format!("SELECT * FROM posts WHERE id in ({})", rm_brackets);
-                sql_query(raw_sql).load::<Post>(conn).expect("failed to load posts")
-            }
-            PostFind::Status(sta) => {
-                posts.filter(schema::posts::status.eq(&sta)).load::<Post>(conn)
-                    .expect("failed to load posts")
-            }
-            PostFind::Title(tit) => {
-                posts.filter(schema::posts::title.eq(&tit)).load::<Post>(conn)
-                    .expect("failed to load posts")
-            }
-            PostFind::AllPost => {
-                posts.order(schema::posts::id.desc()).load::<Post>(conn).expect("failed to load posts")
-            }
-            PostFind::AllPostByAuthor(author) => { // find all posts by specified user
-                let au = users.filter(schema::users::username.eq(&author)).load::<User>(conn)?;
-                let author_posts = Post::belonging_to(&au).load::<Post>(conn)?;
-                // posts.order(schema::posts::id.desc()).load::<Post>(conn).expect("failed to load posts")
-                author_posts
-            }
-            PostFind::UpdatePost(update, old_title, updated_post) => {
-                let mut current_post = posts.filter(schema::posts::title.eq(&old_title)).load::<Post>(conn)
-                    .expect("failed to load posts");
-                let idx = current_post.pop().unwrap().id;
-                let targeted_post = posts.filter(schema::posts::id.eq(&idx));
-                if (update) {
-                    let ss = diesel::update(targeted_post).set(&updated_post)
-                        .load::<Post>(conn).expect("failed to load posts"); // update the modified post
-                }
-                posts.filter(schema::posts::title.eq(&updated_post.title)).load::<Post>(conn)
-                    .expect("failed to load posts")
-            }
-            PostFind::UpdateLikes(user_likes, idx) => {
-                let targeted_post = posts.filter(schema::posts::id.eq(&idx));
-                diesel::update(targeted_post).set(schema::posts::likes.eq(&user_likes)).load::<Post>(conn).expect("failed to load posts")
-            }
+        let all_posts = match post_status {
+            PostStatus::All => posts.order(schema::posts::id.desc()).load::<Post>(conn)?,
+            PostStatus::Draft => posts.order(schema::posts::status.eq("draft")).load::<Post>(conn)?,
+            PostStatus::Published => posts.filter(schema::posts::status.eq("publish")).order(schema::posts::id.asc()).load::<Post>(conn)?,
         };
-        Ok(post_items)
+        Ok(all_posts)
+    }
+
+    pub(crate) fn get_post_by_title(post_title: &str, pool: &Data<PgPool>) -> Result<Option<Post>, failure::Error> {
+        use schema::posts::dsl::*;
+        let conn = &*pool.get()?;
+        let mut post = posts.filter(schema::posts::title.eq(&post_title)).load::<Post>(conn)?;
+        Ok(post.pop())
+    }
+    
+    pub(crate) fn get_posts_by_author(author: &str, pool: &Data<PgPool>) -> Result<Vec<Post>, failure::Error> {
+        use schema::users::dsl::*;
+        let conn = &*pool.get()?;
+        
+        let user_filter = users.filter(schema::users::username.eq(&author)).load::<User>(conn)?;
+        let all_posts = Post::belonging_to(&user_filter).load::<Post>(conn)?;
+        Ok(all_posts)
+    }
+    
+    pub(crate) fn update_likes((likes_num, post_id): (i32, i32), pool: &Data<PgPool>) -> Result<(), failure::Error> {
+        use schema::posts::dsl::*;
+        let conn = &*pool.get()?;
+        
+        let target_post = posts.filter(schema::posts::id.eq(&post_id));
+        diesel::update(target_post).set(schema::posts::likes.eq(&likes_num)).load::<Post>(conn)?;
+        Ok(())
+    }
+    
+    pub(crate) fn update_post(old_title: &str, updated_post: &UpdatedPost, pool: &Data<PgPool>) -> Result<Status, failure::Error> {
+        use schema::posts::dsl::*;
+        let conn = &*pool.get()?;
+        
+        // every post has unique title
+        let current_post = posts.filter(schema::posts::title.eq(&old_title)).load::<Post>(conn)?;
+        let is_updated = current_post.get(0).map_or_else(
+            || {
+                Ok(Status::Failure)
+            },
+            |post| {
+                let post_filter = posts.filter(schema::posts::id.eq(&post.id));
+                diesel::update(post_filter).set(updated_post).load::<Post>(conn)?;
+                Ok(Status::Success)
+            }
+        );
+        is_updated
+    }
+    
+    pub(crate) fn insert_post(new_post: &NewPost, pool: &Data<PgPool>) -> Result<Status, failure::Error> {
+        use schema::posts::dsl::*;
+        let conn = &*pool.get()?;
+        
+        let dup_title = posts.filter(schema::posts::title.eq(&new_post.title)).load::<Post>(conn)?;
+        if dup_title.len().eq(&0) {
+            diesel::insert_into(posts).values(new_post).execute(conn)?;
+            Ok(Status::Success)
+        } else {
+            Ok(Status::Failure)
+        }
     }
 }
