@@ -1,5 +1,5 @@
-pub mod comment;
-pub mod contact;
-pub mod post;
-pub mod schema;
-pub mod user;
+pub(crate) mod user;
+pub(crate) mod post;
+pub(crate) mod contact;
+pub(crate) mod comment;
+pub(crate) mod schema;
