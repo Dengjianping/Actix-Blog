@@ -59,7 +59,7 @@ pub fn login_required(_: TokenStream, func: TokenStream) -> TokenStream {
             }
             
             if is_expired(&#identity_param) {
-                FutErr(ErrorKind::IdenttifyExpiredError)
+                FutErr(ErrorKind::IdentityExpiredError)
             } else {
                 #func_block
             }
