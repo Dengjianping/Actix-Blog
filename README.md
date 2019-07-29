@@ -38,9 +38,9 @@ Literally, I'm not that good at front-end.
 git clone https://github.com/Dengjianping/Actix-Blog.git
 ```
 2. Create a database in postgresql, remember the name for next operation.
-3. Create a database environment. Modify the **.bashrc**(ubuntu), add the following line to it, replace the contents contained by brackets with your own names.
+3. Modify the **.env** file, add following configuration.
 ```
-export DATABASE_URL=postgres://[your_name]:[passowrd]@localhost/[database_name]
+DATABASE_URL=postgres://[your_name]:[passowrd]@localhost/[database_name]
 ```
 4. Install [diesel_cli](http://diesel.rs/guides/getting-started/) with the following command.
 ```
@@ -50,7 +50,7 @@ cargo install diesel_cli --no-default-features --features "postgres"
 ```
 cd actix_blog
 # migration, 
-diesel migration run
+diesel database setup
 ```
 6. Configure the project. There's a actix_blog.toml file in root folder, give the actual values to it.
 7. Build the project.
