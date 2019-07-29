@@ -1,7 +1,8 @@
 [![Build Status](https://travis-ci.com/Dengjianping/Actix-Blog.svg?branch=master)](https://travis-ci.com/Dengjianping/Actix-Blog)
 
 ## About this project
-There're two branches, the **master** uses actix-web 1.0, **v0.7** uses actix-web 0.7.x.
+There're two branches, the **master** uses actix-web 1.0, branch **v0.7** uses actix-web 0.7.x.
+Literally, I'm not that good at front-end.
 
 ## Thanks to these resources
 - ### Front-End
@@ -97,8 +98,8 @@ cargo run --release
 - **The most important is that I have enough time to do that.**
 
 ## Issues
-1. Still having problem on rendering markdown, like programming-lang code section.
-2. Cookies handling.
+~~1. Still having problem on rendering markdown, like programming-lang code section.~~
+~~2. Cookies handling.~~
 3. No 404 page.
 4. No tests.
 5. Honestly, the webUI looks really ugly(not good at css/js).
