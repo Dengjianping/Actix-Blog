@@ -63,6 +63,11 @@ syn = { version = "0.15", features = ["full", "extra-traits"] }
 quote = "0.6"
 proc-macro2 = "0.4"
 
+[dev-dependencies]
+actix-service = "0.4"
+bytes = "0.4"
+serde_json = "1.0"
+
 [profile.release]
 opt-level = 3
 lto = true # optimization for Link-Time Optimizations
