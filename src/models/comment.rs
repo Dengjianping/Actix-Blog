@@ -79,8 +79,7 @@ impl CommentOperation {
         
         let now_is: NaiveDateTime = Utc::now().naive_utc();
         let today_begin: NaiveDateTime = NaiveDate::from_ymd(now_is.year(), now_is.month(), now_is.day()).and_hms(0, 0, 0);
-        let today_end: NaiveDateTime = NaiveDate::from_ymd(now_is.year(), now_is.month(), now_is.day() + 1).and_hms(0, 0, 0);
-        let today_comments = comments.filter(schema::comments::committed_time.between(today_begin, today_end)).load::<Comment>(conn)?;
+        let today_comments = comments.filter(schema::comments::committed_time.between(today_begin, now_is)).load::<Comment>(conn)?;
         Ok(today_comments)
     }
     
