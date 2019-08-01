@@ -34,7 +34,6 @@ futures = "0.1"
 bcrypt = "0.5"
 itertools = "0.8"
 juniper = "0.12"
-log = "0.4"
 
 # error handler
 failure = "0.1"
@@ -67,6 +66,7 @@ proc-macro2 = "0.4"
 actix-service = "0.4"
 bytes = "0.4"
 serde_json = "1.0"
+rand = "0.7"
 
 [profile.release]
 opt-level = 3
