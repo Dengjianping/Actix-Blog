@@ -50,10 +50,8 @@ pub fn login_required(_: TokenStream, func: TokenStream) -> TokenStream {
         #func_vis fn #func_name #func_generics(#func_inputs) #func_output {
             fn is_expired(#identity_param: &#identity_type) -> bool {
                 if let Some(_) = #identity_param.identity() {
-                    println!("identity is not expired");
                     false
                 } else {
-                    println!("already expired");
                     true
                 }
             }
