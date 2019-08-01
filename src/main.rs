@@ -14,7 +14,7 @@ mod error_types;
 #[cfg(test)]
 mod test;
 
-use crate::utils::utils::{ db_pool, blog_config, load_ssl };
+use crate::utils::utils::{ db_pool, blog_config };
 
 fn main() -> Result<(), failure::Error> {
     let sys = actix_rt::System::new("actix-blog"); // create a actix system
@@ -107,6 +107,7 @@ fn main() -> Result<(), failure::Error> {
     
     #[cfg(feature = "http2")]
     {
+        use crate::utils::utils::load_ssl;
         blog_server.bind_ssl(format!("{}:{}", &address, &port), load_ssl()?)?.start();
     }
     

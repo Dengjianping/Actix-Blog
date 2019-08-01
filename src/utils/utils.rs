@@ -27,6 +27,7 @@ pub(crate) fn db_pool() -> Result<PgPool, failure::Error> {
 }
 
 // enable http2/s
+#[allow(dead_code)]
 pub(crate) fn load_ssl() -> Result<SslAcceptorBuilder, failure::Error> {
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls())?;
     builder.set_private_key_file("ssl_keys/server.pem", SslFiletype::PEM)?;
