@@ -51,13 +51,13 @@ pub(crate) fn handle_login(
                 FutResult(Ok(redirect("/admin/dashboard/")))
             }
             _ => {
-                FutResult(Ok(HttpResponse::Ok().content_type("text/html")
+                FutResult(Ok(HttpResponse::Unauthorized().content_type("text/html")
                     .body("<h1 style='text-align: center;'>Wrong Password.</h1> 
                            <h2 style='text-align: center;'><a href='.'>Go back</a></h2>")))
             }
         }
     } else {
-        FutResult(Ok(HttpResponse::Ok().content_type("text/html")
+        FutResult(Ok(HttpResponse::Unauthorized().content_type("text/html")
             .body("<h1 style='text-align: center;'>User doesn't exist.</h1>
                    <h2 style='text-align: center;'><a href='.'>Go back</a></h2>")))
     }
@@ -72,8 +72,8 @@ pub(crate) fn user_exist(
     
     match existed_user {
         Ok(Some(_user)) => FutResult(Ok(HttpResponse::Ok().json(true))),
-        Ok(None) => FutResult(Ok(HttpResponse::Ok().json(false))),
-        Err(_e) => FutResult(Ok(HttpResponse::InternalServerError().into()))
+        _ => FutResult(Ok(HttpResponse::Ok().json(false))),
+        // Err(_e) => FutResult(Ok(HttpResponse::InternalServerError().into()))
     }
 }
 
@@ -152,7 +152,8 @@ pub(crate) fn handle_registration(
     }
 }
 
-pub(crate) fn reset_password() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
+#[login_required]
+pub(crate) fn reset_password(identity: Identity) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
     let template = COMPILED_TEMPLATES.render("admin/reset_password.html", tera::Context::new());
     
     match template {
@@ -187,7 +188,7 @@ pub(crate) fn save_changed_password(
             Err(e) => FutErr(ErrorKind::PasswordModificationError(e.to_string()))
         }
     } else {
-        FutResult(Ok(HttpResponse::Ok().content_type("text/html")
+        FutResult(Ok(HttpResponse::Forbidden().content_type("text/html")
             .body("<h1 style='text-align: center;'>Do not use the same password.</h1> 
                    <h2 style='text-align: center;'><a href='.'>Go back to to reset again</a></h2>")))
     }
@@ -274,7 +275,7 @@ pub(crate) fn save_modified_post(
     
     match PostOperation::update_post(&title, &updated_post, &db) {
         Ok(Status::Success) => FutResult(Ok(redirect("/admin/dashboard/"))),
-        Ok(Status::Failure) => unreachable!(),
+        Ok(Status::Failure) => FutResult(Ok(HttpResponse::InternalServerError().into())),
         Err(e) => FutErr(ErrorKind::DbOperationError(e.to_string()))
     }
 }
