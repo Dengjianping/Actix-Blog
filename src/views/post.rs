@@ -204,7 +204,7 @@ pub(crate) fn page_404() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
     let template = COMPILED_TEMPLATES.render("404.html", tera::Context::new());
             
     match template {
-        Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
+        Ok(t) => FutResult(Ok(HttpResponse::NotFound().content_type("text/html").body(t))),
         Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
     }
 }
