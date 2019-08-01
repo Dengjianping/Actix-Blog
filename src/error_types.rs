@@ -27,9 +27,9 @@ pub(crate) enum ErrorKind {
 impl ResponseError for ErrorKind {
     fn error_response(&self) -> HttpResponse {
         match self {
-            ErrorKind::DbOperationError(e) => HttpResponse::Ok().content_type("text/html").body(e),
+            ErrorKind::DbOperationError(e) => HttpResponse::InternalServerError().content_type("text/html").body(e),
             ErrorKind::TemplateError(e) => {
-                HttpResponse::Ok().content_type("text/html").body(e)
+                HttpResponse::InternalServerError().content_type("text/html").body(e)
             }
             ErrorKind::IdentityExpiredError => HttpResponse::TemporaryRedirect().header("Location", "/admin/login/").finish(),
             ErrorKind::PasswordVerificationError(e) => {
