@@ -6,12 +6,13 @@ use actix_session::CookieSession;
 use actix_identity::{ CookieIdentityPolicy, IdentityService };
 use actix_web::{ web, App, HttpServer, middleware };
 
-
 #[macro_use]
 mod utils;
 mod views;
 mod models;
 mod error_types;
+#[cfg(test)]
+mod test;
 
 use crate::utils::utils::{ db_pool, blog_config, load_ssl };
 
@@ -61,7 +62,7 @@ fn main() -> Result<(), failure::Error> {
                     .service(web::resource("/dashboard/").route(web::post().to_async(views::auth::dashboard))
                                                          .route(web::get().to_async(views::auth::dashboard))
                     )
-                    .service(web::resource("/all_post/").route(web::get().to_async(views::auth::show_all_posts_by_author)))
+                    .service(web::resource("/all_posts/").route(web::get().to_async(views::auth::show_all_posts_by_author)))
                     .service(web::resource("/today_comments/").route(web::get().to_async(views::auth::today_comments)))
                     .service(web::resource("/all_guests_messages/").route(web::get().to_async(views::auth::all_guests_messages)))
                     .service(web::resource("/about_self/").route(web::get().to_async(views::auth::about_self)))
