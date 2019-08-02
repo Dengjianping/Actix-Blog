@@ -7,9 +7,19 @@ use std::{ fs::File, io::{ BufReader, prelude::* } };
 
 pub(crate) type PgPool = Pool<ConnectionManager<PgConnection>>;
 
+#[derive(Debug)]
 pub(crate) enum Status {
     Failure,
     Success,
+}
+
+impl PartialEq for Status {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Status::Success, Status::Success) => true,
+            _ => false,
+        }
+    }
 }
 
 lazy_static! {
