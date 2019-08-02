@@ -50,7 +50,7 @@ cargo install diesel_cli --no-default-features --features "postgres"
 ```
 cd actix_blog
 # migration, 
-diesel database setup
+diesel migration setup
 ```
 6. Configure the project. There's a actix_blog.toml file in root folder, give the actual values to it.
 7. Build the project.
@@ -58,6 +58,21 @@ diesel database setup
 cargo run --release
 ```
 
+## How to tun test
+1. Modify database url for testing in file **.env**.
+```
+TEST_DATABASE_URL=postgres://[your_name]:[passowrd]@localhost/[database_name]
+```
+2. Migration. The following command will generate all tables the project needs.
+```
+diesel --database-url postgres://[your_name]:[passowrd]@localhost/[database_name] migration run
+```
+3. Run test.
+```
+cargo test
+```
+
+Tips: All test cases in under [src/test](https://github.com/Dengjianping/Actix-Blog/tree/master/src/test).
 
 ## Glance
 ![main page](samples/blog_page.JPG)
@@ -71,7 +86,7 @@ cargo run --release
 - Use likes(ajax)
 - Search
 - Basic admin privileges
-- Add/modify post that written by markdown.
+- Markdown supporting.
 - HTTP2(s) Support(not default)
     - If you really want to experience http2, use the example ssl keys or follow this **[English](https://www.wikihow.com/Be-Your-Own-Certificate-Authority)** or **[中文](https://www.linuxidc.com/Linux/2015-10/124001.htm)** to create certifications, put the generated keys to folder "ssl_keys", rename both keys with the same name as the example's. And Compile the project with this following command.
     ```
@@ -84,23 +99,14 @@ cargo run --release
 
 
 ## Future
-- Tests
-- Provide a cli tool for convenient deployment.(in progress)
-- Add redis cache system
-- Category
-- Archive
-- OAuth. Allow 3rd-party log-in, like webchat/github/google/apple... .
-- The webUI may be rewritten by webassembly(I did some research, several webassembly frameworks is available
+- Redis.
+- Category.
+- Archive.
+- Dockerfile.
+- OAuth. Allow 3rd-party user log-in, like webchat/github/google/apple... .
+- The webUI may be rewritten by webassembly(I did some research, several webassembly frameworks is available now
     - **[Yew](https://github.com/DenisKolodin/yew)**
     - **[Percy](https://github.com/chinedufn/percy)**
     - **[Seeds](https://github.com/David-OConnor/seed)**
     - ...
-- **The most important is that I have enough time to do that.**
-
-## Issues
-~~1. Still having problem on rendering markdown, like programming-lang code section.~~
-~~2. Cookies handling.~~
-3. No 404 page.
-4. No tests.
-5. Honestly, the webUI looks really ugly(not good at css/js).
-6. Definitely, there're tons of bugs in this project.
+- ...
