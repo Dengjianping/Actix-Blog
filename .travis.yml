@@ -6,6 +6,12 @@ rust:
   - beta
   - stable
   
+services:
+  - postgresql
+
+addons:
+  postgresql: "9.6"
+  
 cache:
   cargo: true
   apt: true
@@ -18,6 +24,13 @@ env:
   global:
     # - RUSTFLAGS="-C link-dead-code"
     - OPENSSL_VERSION=openssl-1.0.2
+    
+script:
+  - echo "SCRIPT"
+  - psql -c 'CREATE DATABASE blog_test;' -U postgres
+  - if which diesel; then echo "diesel-cli already installed"; else cargo install diesel_cli --no-default-features --features=postgres; fi
+  - diesel --database-url postgres://postgres@localhost/blog_test migration run
+
 
 before_install:
   # - sudo add-apt-repository -y ppa:0k53d-karl-f830m/openssl
