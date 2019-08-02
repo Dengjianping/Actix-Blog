@@ -6,9 +6,7 @@ use bytes::Bytes;
 use serde::{ Serialize, Deserialize };
 
 use crate::views;
-use super::{ generate_random_string, test_db_pool };
-
-const USERNAME_WITH_PWD: &[u8] = b"username=actix&password=welcome";
+use super::{ generate_random_string, insert_posts, insert_new_user, test_db_pool, USERNAME_WITH_PWD };
 
 #[test]
 fn test_login() {
@@ -26,6 +24,9 @@ fn test_login() {
 
 #[test]
 fn test_handle_login() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -166,6 +167,9 @@ fn test_handle_registration_failure() {
 
 #[test]
 fn test_user_exist() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .service(fs::Files::new("/static", "static/").show_files_listing())
         .service(
@@ -174,7 +178,7 @@ fn test_user_exist() {
     );
     
     new_struct!(UserExist, pub, [Debug, Clone, Serialize, Deserialize], (username=>String));
-    let user_exist = UserExist { username: "jdeng".to_owned() };
+    let user_exist = UserExist { username: "actix".to_owned() };
     let req = test::TestRequest::post().uri("/admin/user_exist/")
                                        .header(header::CONTENT_TYPE, "application/json")
                                        .set_json(&user_exist)
@@ -204,6 +208,9 @@ fn test_user_not_exist() {
 
 #[test]
 fn test_email_exist() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .service(fs::Files::new("/static", "static/").show_files_listing())
         .service(
@@ -212,7 +219,7 @@ fn test_email_exist() {
     );
     
     new_struct!(EmailExist, pub, [Debug, Clone, Serialize, Deserialize], (email=>String));
-    let email_exist = EmailExist { email: "djptux@gmail.com".to_owned() };
+    let email_exist = EmailExist { email: "jim.bob@actix.com".to_owned() };
     let req = test::TestRequest::post().uri("/admin/email_exist/")
                                        .header(header::CONTENT_TYPE, "application/json")
                                        .set_json(&email_exist)
@@ -242,6 +249,9 @@ fn test_email_not_exist() {
 
 #[test]
 fn test_dashboard_post() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -262,7 +272,6 @@ fn test_dashboard_post() {
     // before test getting dashboard, login is required due to setting identity.
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
-                .header(header::CONTENT_LENGTH, "41")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
                 .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
@@ -280,6 +289,9 @@ fn test_dashboard_post() {
 
 #[test]
 fn test_dashboard_get() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -318,6 +330,9 @@ fn test_dashboard_get() {
 
 #[test]
 fn test_logout() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -338,7 +353,6 @@ fn test_logout() {
     // before test getting dashboard, login is required due to setting identity.
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
-                .header(header::CONTENT_LENGTH, "41")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
                 .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
@@ -356,6 +370,9 @@ fn test_logout() {
 
 #[test]
 fn test_about_self() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -394,6 +411,9 @@ fn test_about_self() {
 
 #[test]
 fn test_show_all_posts_by_author() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -414,7 +434,6 @@ fn test_show_all_posts_by_author() {
     // before test getting dashboard, login is required due to setting identity.
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
-                .header(header::CONTENT_LENGTH, "41")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
                 .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
@@ -432,6 +451,9 @@ fn test_show_all_posts_by_author() {
 
 #[test]
 fn test_today_comments() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -469,6 +491,9 @@ fn test_today_comments() {
 
 #[test]
 fn test_all_guests_messages() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -506,6 +531,9 @@ fn test_all_guests_messages() {
 
 #[test]
 fn test_write_post() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -543,6 +571,9 @@ fn test_write_post() {
 
 #[test]
 fn test_submit_post() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -588,6 +619,9 @@ fn test_submit_post() {
 
 #[test]
 fn test_submit_post_failure() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -633,6 +667,9 @@ fn test_submit_post_failure() {
 
 #[test]
 fn test_reset_password() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -673,6 +710,9 @@ fn test_reset_password() {
 
 #[test]
 fn test_save_changed_password_failure() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -716,6 +756,10 @@ fn test_save_changed_password_failure() {
 
 #[test]
 fn test_modify_post() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    insert_posts();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
@@ -756,6 +800,10 @@ fn test_modify_post() {
 
 #[test]
 fn test_save_modified_post() {
+    // There is one user in database at least for testing.
+    insert_new_user();
+    insert_posts();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
