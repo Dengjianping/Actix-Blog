@@ -90,10 +90,16 @@ pub(crate) fn pagination(
                 ctx.insert("page_num", &(*page_num + 1));
                 ctx.insert("last_page", &false);
                 (*page_num - 1) * PAGE..*page_num * (PAGE + 1)
-            } else {
+            } else if ((*page_num - 1) * PAGE).lt(&posts.len()) {
                 ctx.insert("page_num", &*page_num);
                 ctx.insert("last_page", &true);
                 (*page_num - 1) * PAGE..posts.len()
+            } else {
+                // in case the page_num is much bigger than then length of posts.
+                // maybe the page_num is inputed by manually, so go back to index page
+                ctx.insert("page_num", &2);
+                ctx.insert("last_page", &false);
+                0..PAGE
             };
             ctx.insert("posts", &posts[range]);
 
