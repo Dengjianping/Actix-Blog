@@ -6,9 +6,9 @@ use bytes::Bytes;
 use serde::{ Serialize, Deserialize };
 
 use crate::views;
-use crate::utils::utils::db_pool;
-use super::generate_random_string;
+use super::{ generate_random_string, test_db_pool };
 
+const USERNAME_WITH_PWD: &[u8] = b"username=actix&password=welcome";
 
 #[test]
 fn test_login() {
@@ -26,7 +26,7 @@ fn test_login() {
 
 #[test]
 fn test_handle_login() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -46,9 +46,8 @@ fn test_handle_login() {
     
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
-                .header(header::CONTENT_LENGTH, "41")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     
     let resp = test::block_on(app.call(req)).unwrap();
@@ -57,7 +56,7 @@ fn test_handle_login() {
 
 #[test]
 fn test_handle_login_failure() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -79,7 +78,7 @@ fn test_handle_login_failure() {
                 .uri("/admin/login/")
                 .header(header::CONTENT_LENGTH, "41")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=123456"))
+                .set_payload(Bytes::from_static(b"username=actix&password=123456"))
                 .to_request();
     
     let resp = test::block_on(app.call(req)).unwrap();
@@ -102,7 +101,7 @@ fn test_register() {
 
 #[test]
 fn test_handle_registration() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -135,7 +134,7 @@ fn test_handle_registration() {
 
 #[test]
 fn test_handle_registration_failure() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -153,7 +152,8 @@ fn test_handle_registration_failure() {
         )
     );
     
-    let new_user = b"username=jdeng&password=welcome&first_name=Jianping&last_name=Deng&email=djptux@gmail.com";
+    // cannot register a user with a username that has been existed.
+    let new_user = b"username=actix&password=welcome&first_name=jack&last_name=jones&email=jack.jones@actix.com";
     let req = test::TestRequest::post()
                 .uri("/admin/register/")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
@@ -166,7 +166,7 @@ fn test_handle_registration_failure() {
 
 #[test]
 fn test_user_exist() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .service(fs::Files::new("/static", "static/").show_files_listing())
         .service(
             web::scope("/admin").service(web::resource("/user_exist/").route(web::post().to_async(views::auth::user_exist)))
@@ -185,7 +185,7 @@ fn test_user_exist() {
 
 #[test]
 fn test_user_not_exist() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .service(fs::Files::new("/static", "static/").show_files_listing())
         .service(
             web::scope("/admin").service(web::resource("/user_exist/").route(web::post().to_async(views::auth::user_exist)))
@@ -204,7 +204,7 @@ fn test_user_not_exist() {
 
 #[test]
 fn test_email_exist() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .service(fs::Files::new("/static", "static/").show_files_listing())
         .service(
             web::scope("/admin").service(web::resource("/email_exist/").route(web::post().to_async(views::auth::email_exist)))
@@ -223,7 +223,7 @@ fn test_email_exist() {
 
 #[test]
 fn test_email_not_exist() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .service(fs::Files::new("/static", "static/").show_files_listing())
         .service(
             web::scope("/admin").service(web::resource("/email_exist/").route(web::post().to_async(views::auth::email_exist)))
@@ -242,7 +242,7 @@ fn test_email_not_exist() {
 
 #[test]
 fn test_dashboard_post() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -264,7 +264,7 @@ fn test_dashboard_post() {
                 .uri("/admin/login/")
                 .header(header::CONTENT_LENGTH, "41")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -280,7 +280,7 @@ fn test_dashboard_post() {
 
 #[test]
 fn test_dashboard_get() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -302,7 +302,7 @@ fn test_dashboard_get() {
                 .uri("/admin/login/")
                 .header(header::CONTENT_LENGTH, "41")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -318,7 +318,7 @@ fn test_dashboard_get() {
 
 #[test]
 fn test_logout() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -340,7 +340,7 @@ fn test_logout() {
                 .uri("/admin/login/")
                 .header(header::CONTENT_LENGTH, "41")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -356,7 +356,7 @@ fn test_logout() {
 
 #[test]
 fn test_about_self() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -378,7 +378,7 @@ fn test_about_self() {
                 .uri("/admin/login/")
                 .header(header::CONTENT_LENGTH, "41")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -394,7 +394,7 @@ fn test_about_self() {
 
 #[test]
 fn test_show_all_posts_by_author() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -416,7 +416,7 @@ fn test_show_all_posts_by_author() {
                 .uri("/admin/login/")
                 .header(header::CONTENT_LENGTH, "41")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -432,7 +432,7 @@ fn test_show_all_posts_by_author() {
 
 #[test]
 fn test_today_comments() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -452,9 +452,8 @@ fn test_today_comments() {
     // before test getting dashboard, login is required due to setting identity.
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
-                .header(header::CONTENT_LENGTH, "41")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -470,7 +469,7 @@ fn test_today_comments() {
 
 #[test]
 fn test_all_guests_messages() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -490,9 +489,8 @@ fn test_all_guests_messages() {
     // before test getting dashboard, login is required due to setting identity.
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
-                .header(header::CONTENT_LENGTH, "41")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -508,7 +506,7 @@ fn test_all_guests_messages() {
 
 #[test]
 fn test_write_post() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -529,7 +527,7 @@ fn test_write_post() {
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -545,7 +543,7 @@ fn test_write_post() {
 
 #[test]
 fn test_submit_post() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -566,7 +564,7 @@ fn test_submit_post() {
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -590,7 +588,7 @@ fn test_submit_post() {
 
 #[test]
 fn test_submit_post_failure() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -611,7 +609,7 @@ fn test_submit_post_failure() {
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -635,7 +633,7 @@ fn test_submit_post_failure() {
 
 #[test]
 fn test_reset_password() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -656,7 +654,7 @@ fn test_reset_password() {
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -675,7 +673,7 @@ fn test_reset_password() {
 
 #[test]
 fn test_save_changed_password_failure() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -696,7 +694,7 @@ fn test_save_changed_password_failure() {
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -718,7 +716,7 @@ fn test_save_changed_password_failure() {
 
 #[test]
 fn test_modify_post() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -731,7 +729,7 @@ fn test_modify_post() {
         .service(fs::Files::new("/static", "static/").show_files_listing())
         .service(
             web::scope("/admin").service(web::resource("/login/").route(web::post().to_async(views::auth::handle_login)))
-                                .service(web::resource("/article/{title}/").route(web::get().to_async(views::auth::modify_post)))
+                                .service(web::resource("/{title}/").route(web::get().to_async(views::auth::modify_post)))
         )
     );
     
@@ -739,7 +737,7 @@ fn test_modify_post() {
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
@@ -749,7 +747,7 @@ fn test_modify_post() {
     assert!(identity.is_some());
     
     let req = test::TestRequest::get()
-                .uri("/admin/article/Cow%20in%20Rust/")
+                .uri("/admin/python/")
                 .cookie(identity.unwrap())
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
@@ -758,7 +756,7 @@ fn test_modify_post() {
 
 #[test]
 fn test_save_modified_post() {
-    let mut app = test::init_service(App::new().data(db_pool().unwrap().clone())
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(
             IdentityService::new(
                 CookieIdentityPolicy::new(&[0;32])
@@ -779,7 +777,7 @@ fn test_save_modified_post() {
     let req = test::TestRequest::post()
                 .uri("/admin/login/")
                 .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .set_payload(Bytes::from_static(b"username=jdeng&password=welcome"))
+                .set_payload(Bytes::from_static(USERNAME_WITH_PWD))
                 .to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::TEMPORARY_REDIRECT);
