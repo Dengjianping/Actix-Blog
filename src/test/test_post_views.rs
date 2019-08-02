@@ -5,15 +5,12 @@ use actix_files as fs;
 use actix_session::CookieSession;
 use actix_service::Service;
 use bytes::Bytes;
-use chrono::Utc;
 use serde::{ Serialize, Deserialize };
 
 use crate::views;
 use crate::models::comment::CreateComment;
 use crate::models::contact::CreateContact;
-use crate::models::post::{ NewPost, PostOperation };
-use crate::utils::utils::Status;
-use super::{ generate_random_string, test_db_pool };
+use super::{ insert_posts, test_db_pool };
 
 
 #[test]
@@ -76,6 +73,9 @@ fn test_contact() {
 
 #[test]
 fn test_all_post() {
+    // before run this test case, it needs a default post.
+    insert_posts();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .service(fs::Files::new("/static", "static/").show_files_listing())
         .service(
@@ -90,6 +90,9 @@ fn test_all_post() {
 
 #[test]
 fn test_all_pagination() {
+    // before run this test case, it needs a default post.
+    insert_posts();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .service(fs::Files::new("/static", "static/").show_files_listing())
         .service(
@@ -113,24 +116,7 @@ fn test_all_pagination_failure() {
     
     // insert 4 posts to database at least for testing this case
     // due to each page hasing 4 posts to show there.
-    let db = web::Data::new(test_db_pool().unwrap().clone());
-    (0..4).for_each(|_| {
-        let new_post = NewPost {
-            title: generate_random_string(10),
-            slug: generate_random_string(5),
-            body: generate_random_string(40),
-            publish: Some(Utc::now().naive_utc()),
-            created: Some(Utc::now().naive_utc()),
-            updated: Some(Utc::now().naive_utc()),
-            status: "publish".to_owned(),
-            user_id: 1,
-            likes: 0,
-        };
-        match PostOperation::insert_post(&new_post, &db) {
-            Ok(lhs) => assert_eq!(lhs, Status::Success),
-            _ => assert!(false),
-        }
-    });
+    insert_posts();
     
     let req = test::TestRequest::get().uri("/page/100/").to_request();
     let resp = test::block_on(app.call(req)).unwrap();
@@ -161,6 +147,9 @@ fn test_add_contact() {
 
 #[test]
 fn test_add_comment() {
+    // before run this test case, it needs a default post.
+    insert_posts();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(CookieSession::signed(&[0; 32]).name("post_session").secure(false))
         .service(fs::Files::new("/static", "static/").show_files_listing())
@@ -193,6 +182,9 @@ fn test_add_comment() {
 
 #[test]
 fn test_user_likes() {
+    // before run this test case, it needs a default post.
+    insert_posts();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(CookieSession::signed(&[0; 32]).name("post_session").secure(false))
         .service(fs::Files::new("/static", "static/").show_files_listing())
@@ -222,6 +214,9 @@ fn test_user_likes() {
 
 #[test]
 fn test_post_detail() {
+    // before run this test case, it needs a default post.
+    insert_posts();
+    
     let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
         .wrap(CookieSession::signed(&[0; 32]).secure(false))
         .service(fs::Files::new("/static", "static/").show_files_listing())
@@ -230,7 +225,7 @@ fn test_post_detail() {
         )
     );
     
-    let req = test::TestRequest::get().uri("/article/Cow%20in%20Rust/").to_request();
+    let req = test::TestRequest::get().uri("/article/python/").to_request();
     let resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status(), http::StatusCode::OK);
 }
