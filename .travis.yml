@@ -30,6 +30,7 @@ script:
   - psql -c 'CREATE DATABASE blog_test;' -U postgres
   - if which diesel; then echo "diesel-cli already installed"; else cargo install diesel_cli --no-default-features --features=postgres; fi
   - diesel --database-url postgres://postgres@localhost/blog_test migration run
+  - cargo test -- -- nocapture
 
 
 before_install:
