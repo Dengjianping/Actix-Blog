@@ -72,7 +72,7 @@ diesel --database-url postgres://[your_name]:[passowrd]@localhost/[database_name
 cargo test
 ```
 
-Tips: All test cases in under [src/test](https://github.com/Dengjianping/Actix-Blog/tree/master/src/test).
+Tips: All test cases are under [src/test](https://github.com/Dengjianping/Actix-Blog/tree/master/src/test).
 
 ## Glance
 ![main page](samples/blog_page.JPG)
