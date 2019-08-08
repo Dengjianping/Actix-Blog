@@ -2,7 +2,8 @@
 
 ## About this project
 There're two branches, the **master** uses actix-web 1.0, branch **v0.7** uses actix-web 0.7.x.
-Literally, I'm not that good at front-end.
+
+BTW, I'm literally not that good at front-end.
 
 ## Thanks to these resources
 - ### Front-End
