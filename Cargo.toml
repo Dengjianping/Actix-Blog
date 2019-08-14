@@ -58,8 +58,8 @@ dotenv = "0.14"
 tera = "1.0.0-beta.13"
 
 # for code genration, proc macro
-syn = { version = "0.15", features = ["full", "extra-traits"] }
-quote = "0.6"
+syn = { version = "1.0", features = ["full", "extra-traits"] }
+quote = "1.0"
 proc-macro2 = "0.4"
 
 [dev-dependencies]
