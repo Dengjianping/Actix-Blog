@@ -5,9 +5,9 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::{ quote, ToTokens };
-use proc_macro2::{Ident, Span};
+
 // remember to add 'full' feature for sys in toml file, 
-use syn::{ parse_macro_input, NestedMeta, Meta, FnDecl, ItemFn, Pat, FnArg, AttributeArgs };
+use syn::{ parse_macro_input, NestedMeta, Meta, ItemFn, FnArg, AttributeArgs };
 
 
 // remenber to add 
@@ -18,24 +18,24 @@ use syn::{ parse_macro_input, NestedMeta, Meta, FnDecl, ItemFn, Pat, FnArg, Attr
 pub fn login_required(_: TokenStream, func: TokenStream) -> TokenStream {
     // _ means there's no attribute here to pass and handle.
     let func = parse_macro_input!(func as ItemFn);
-    let func_vis = &func.vis; // like pub
-    let func_name = &func.ident; // function name
-    let func_block = &func.block; // { some statement or expression here }
-    let func_decl = func.decl;
-
-    let func_generics = &func_decl.generics;
-    let func_inputs = &func_decl.inputs;
-    let func_output = &func_decl.output;
+    let func_block = func.block;
+    let func_vis = func.vis;
+    
+    let func_sig = func.sig;
+    let func_name = func_sig.ident;
+    let func_inputs = func_sig.inputs;
+    let func_output = func_sig.output;
+    let func_generics = func_sig.generics;
     
     let params: Vec<_> = func_inputs.iter().filter_map(|i| {
         match i {
-            // https://docs.rs/syn/0.15.26/syn/enum.Pat.html
-            FnArg::Captured(ref val) => {
+            // https://docs.rs/syn/1.0.1/syn/struct.PatType.html
+            FnArg::Typed(ref pat_type) => {
                 //dbg!(&i);
-                let identity_type = val.ty.clone().into_token_stream();
+                let identity_type = pat_type.ty.clone().into_token_stream();
                 let identity_type_name = identity_type.to_string();
                 if identity_type_name.eq("Identity") {
-                    Some((&val.pat, identity_type))
+                    Some((&pat_type.pat, identity_type))
                 } else {
                     None
                 }
@@ -65,10 +65,9 @@ pub fn login_required(_: TokenStream, func: TokenStream) -> TokenStream {
     };
     
     // build a TokenStream
-    // https://docs.rs/quote/0.6.10/quote/macro.quote.html
+    // https://docs.rs/quote/1.0.0/quote/macro.quote.html
     caller.into() 
 }
-
 
 // this proc-macro is not ergonomic to use, I have to define a function to receive
 // a closure as parameter, but this closure has uncertain count of parameters.
@@ -78,24 +77,24 @@ pub fn builtin_decorator(attr: TokenStream, func: TokenStream) -> TokenStream {
     let attr = parse_macro_input!(attr as AttributeArgs);
     // only on attribute here
     let attr_ident = match attr.get(0).as_ref().unwrap() {
-        NestedMeta::Meta(Meta::Word(ref attr_ident)) => attr_ident.clone(),
+        NestedMeta::Meta(Meta::Path(ref attr_ident)) => attr_ident.clone(),
         _ => unreachable!("it not gonna happen."),
     };
     
     let func = parse_macro_input!(func as ItemFn);
-    let func_vis = &func.vis; // like pub
-    let func_name = &func.ident; // function name
-    let func_block = &func.block; // { some statement or expression here }
-    let func_decl = func.decl; 
+    let func_block = func.block;
+    let func_vis = func.vis;
     
-    let func_generics = &func_decl.generics;
-    let func_inputs = &func_decl.inputs;
-    let func_output = &func_decl.output;
+    let func_sig = func.sig;
+    let func_name = func_sig.ident;
+    let func_inputs = func_sig.inputs;
+    let func_output = func_sig.output;
+    let func_generics = func_sig.generics;
 
     let params: Vec<_> = func_inputs.iter().map(|i| {
         match i {
-            // https://docs.rs/syn/0.15.26/syn/enum.Pat.html
-            FnArg::Captured(ref val) => &val.pat, // cannot move val out of pat，use ref or val.pat.clone()
+            // https://docs.rs/syn/1.0.1/syn/struct.PatType.html
+            FnArg::Typed(ref pat_type) => &pat_type.pat, // cannot move val out of pat，use ref or val.pat.clone()
             _ => unreachable!("it's not gonna happen."),
         }
     }).collect();
@@ -111,7 +110,5 @@ pub fn builtin_decorator(attr: TokenStream, func: TokenStream) -> TokenStream {
         }
     };
     
-    // build a TokenStream
-    // https://docs.rs/quote/0.6.10/quote/macro.quote.html
     caller.into() 
 }
