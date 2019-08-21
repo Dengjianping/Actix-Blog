@@ -194,8 +194,12 @@ pub(crate) fn save_changed_password(
     }
 }
 
-pub(crate) fn write_post() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
-    let template = COMPILED_TEMPLATES.render("admin/writepost.html", tera::Context::new());
+#[login_required]
+pub(crate) fn write_post(identity: Identity) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
+    let author = identity.identity().unwrap();
+    let mut ctx = tera::Context::new();
+    ctx.insert("username", &author);
+    let template = COMPILED_TEMPLATES.render("admin/write_post.html", ctx);
     
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
@@ -234,8 +238,9 @@ pub(crate) fn show_all_posts_by_author(
     let mut ctx = tera::Context::new();
     ctx.insert("posts", &user_posts);
     ctx.insert("created_time", &created_time);
+    ctx.insert("username", &author);
     
-    let template = COMPILED_TEMPLATES.render("admin/allpost.html", ctx);
+    let template = COMPILED_TEMPLATES.render("admin/all_posts.html", ctx);
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
         Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -248,9 +253,11 @@ pub(crate) fn modify_post(
     db: web::Data<PgPool>,
     identity: Identity
 ) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
+    let user_name = identity.identity().unwrap();
     if let Ok(Some(post)) = PostOperation::get_post_by_title(&title, &db) {
-        let ctx = tera::Context::from_serialize(post).unwrap();
-        let template = COMPILED_TEMPLATES.render("admin/modifypost.html", ctx);
+        let mut ctx = tera::Context::from_serialize(post).unwrap();
+        ctx.insert("username", &user_name);
+        let template = COMPILED_TEMPLATES.render("admin/modify_post.html", ctx);
         match template {
             Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
             Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -285,8 +292,11 @@ pub(crate) fn today_comments(
     db: web::Data<PgPool>,
     identity: Identity
 ) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
-    let all_today_comments = CommentOperation::get_today_comments(&db).unwrap(); // need to remove unwrap
+    let user_name = identity.identity().unwrap();
     let mut ctx = tera::Context::new();
+    ctx.insert("username", &user_name);
+    
+    let all_today_comments = CommentOperation::get_today_comments(&db).unwrap(); // need to remove unwrap
     let mut maps: HashMap<&str, Vec<&Comment>> = HashMap::new();
     
     let ids: Vec<_> = all_today_comments.iter().map(|comment| comment.post_id).unique().collect();
@@ -315,7 +325,10 @@ pub(crate) fn all_guests_messages(
     db: web::Data<PgPool>,
     identity: Identity
 ) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
+    let user_name = identity.identity().unwrap();
     let mut ctx = tera::Context::new();
+    ctx.insert("username", &user_name);
+    
     let guest_msgs = ContactOperation::get_all_contacts(&db);
     let _ = guest_msgs.map(|contacts| {
         ctx.insert("contacts", &contacts);
@@ -335,6 +348,7 @@ pub(crate) fn about_self(
 ) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
     let user_name = identity.identity().unwrap();
     let mut ctx = tera::Context::new();
+    ctx.insert("username", &user_name);
     match UserOperation::get_user_by_name(&user_name, &db) {
         Ok(Some(myself)) => {
             ctx.insert("yourself", &myself);
