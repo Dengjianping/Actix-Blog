@@ -1,0 +1,62 @@
+.main {
+  width: 40%;
+  margin: 50px auto 50px auto;
+  height: 50%;
+  background-color: #e67e22;
+  border-radius: 10px;
+  grid-row: 2 / 3;
+}
+
+#login {
+  margin: 0;
+  display: grid;
+  align-items: center;
+}
+
+#login label:first-child {
+  height: 80px;
+  align-content: center;
+  margin: auto;
+  margin-top: 20px;
+  font-size: 25pt;
+  color: white;
+}
+
+label#name, label#password, a.forget, a.new_user {
+  color: white;
+}
+
+#name, #password, .forget, .new_user {
+  font-size: 15pt;
+  width: 40%;
+  justify-self: center;
+}
+
+.forget {
+  text-align: right;
+}
+
+.new_user {
+  text-align: center;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+input[type="text"], input[type="password"] {
+  border-radius: 5px;
+  outline: none;
+  height: 40px;
+  border: none;
+  color: black;
+}
+
+#login input[type="submit"] {
+  width: 20%;
+  justify-self: center;
+  height: 40px;
+  border-radius: 5px;
+  background-color: #d35400;
+  color: white;
+  margin-top: 40px;
+  font-size: 15pt;
+}

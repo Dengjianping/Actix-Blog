@@ -1,0 +1,64 @@
+.make_friend {
+  width: 60%;
+  height: 40%;
+  margin: auto;
+  margin-top: 100px;
+  display: grid;
+  grid-template-rows: 200px 40px 40px;
+  grid-template-columns: 10% auto;
+  grid-row-gap: 10px;
+}
+
+p {
+  width: 60%;
+  height: 30px;
+  margin: auto;
+  margin-top: 20px;
+  text-align: center;
+  font-size: 25pt;
+}
+  
+#comment {
+  grid-row: 1 / 2;
+}
+
+#name {
+  grid-row: 2 / 3;
+}
+
+#email {
+  grid-row: 3 / 4;
+}
+
+textarea {
+  border-style: solid;
+  border-color: #e67e22;
+  border-radius: 20px;
+  border-width: 2px;
+  outline:none;
+  resize: none;
+}
+
+input#name, input#email {
+  width: 20%;
+  height: 40px;
+  border-style: solid;
+  border-color: #e67e22;
+  border-radius: 8px;
+  align-self: center;
+  outline:none;
+}
+
+label#name, label#email {
+  align-self: center
+}
+
+.make_friend input[type="submit"] {
+  width: 80px;
+  height: 40px;
+  justify-self: start;
+  grid-area: 4 / 2 / 5 / 3;
+  background-color: #e67e22;
+  border-radius: 6px;
+  color: white;
+}

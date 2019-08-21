@@ -1,0 +1,128 @@
+.main, .pagination {
+  margin: 10px auto 0 auto;
+  width: 80%;
+  display: grid;
+  grid-template-columns: 80% 20%;
+}
+
+.preview {
+  border-bottom: solid;
+  border-bottom-color: #e67e22;
+  width: 90%;
+}
+
+.preview a {
+  text-decoration-color: #e67e22;
+  color: #2c3e50;
+}
+
+.preview a:last-of-type {
+  text-decoration: none;
+  font-size: 12pt;
+}
+
+.submit-time {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  margin-bottom: 0;
+  font-size: 12pt;
+}
+
+.submit-time :nth-child(2), .submit-time :nth-child(3), .submit-time :nth-child(4) {
+  justify-self: end;
+  justify-content: end;
+
+}
+
+.submit-time :nth-child(1) {
+  grid-column: 1 / 8;
+}
+
+.submit-time :nth-child(2) {
+  grid-column:10 / 11;
+}
+
+.submit-time :nth-child(3) {
+  grid-column: 11 / 12;
+}
+
+.submit-time :nth-child(4) {
+  grid-column: 12/ 13;
+}
+
+.tags, .archived {
+  text-align: left;
+  height: 180px;
+}
+
+.tags p, .archived p {
+  border-bottom: solid;
+  border-bottom-color: #e67e22;
+  color: #2c3e50;
+  font-size: 18pt;
+}
+
+.tags a {
+  color: white;
+  text-decoration: none;
+  background-color: #e67e22;
+  border-radius: 5px;
+  margin: 4px 2px 4px 2px;
+  font-size: 14pt;
+}
+
+.archived ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.archived ul li {
+  margin-top: 10px;
+}
+
+.archived ul li a {
+  color: #2c3e50;
+  text-decoration-color: #e67e22;
+  /* margin-top: 3px; */
+}
+
+.badge {
+  font-size: 12pt;
+  background-color: #e67e22;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  color: white;
+  margin-left: 2px;
+  vertical-align: top;
+}
+
+.pagination ul {
+  list-style-type: none;
+  width: 90%;
+  padding: 0;
+  text-align: center;
+}
+
+.pagination ul li {
+  display: inline-block;
+}
+
+.pagination ul li a {
+  color: #2c3e50;
+  padding: 8px 16px;
+  text-decoration: none;
+  transition: background-color .5s;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.pagination ul li a.active {
+  background-color: #e67e22;
+  color: white;
+  border: 1px solid #e67e22;
+}
+
+.pagination ul li a:hover:not(.active) {
+  background-color: #e67e22;
+}

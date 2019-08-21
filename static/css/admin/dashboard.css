@@ -1,0 +1,23 @@
+.main {
+  width: 60%;
+  margin: auto;
+  display: inline-flex;
+  margin-top: 20px;
+}
+
+.main div {
+  background-color: #d35400;
+  border-radius: 10px;
+  padding: 10px;
+  color: white;
+  font-size: 14pt;
+  margin-right: 10px;
+}
+
+.messages p, .comments p, .visitors p {
+  border-bottom: solid;
+}
+
+.messages a, .comments a {
+  color: white;
+}

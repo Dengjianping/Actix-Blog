@@ -1,0 +1,59 @@
+.main {
+  width: 40%;
+  margin: 50px auto 50px auto;
+  height: 70%;
+  background-color: #e67e22;
+  border-radius: 10px;
+  grid-row: 2 / 3;
+}
+
+.registration {
+  margin: 0;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  align-items: center;
+}
+
+.registration label:first-child {
+  height: 80px;
+  align-content: center;
+  margin: auto;
+  margin-top: 20px;
+  font-size: 25pt;
+  color: white;
+}
+
+.registration:not(label) {
+  color: white;
+  font-size: 15pt;
+  justify-self: center;
+}
+
+#name, #password, #lname, #fname, #email {
+  font-size: 15pt;
+  width: 40%;
+  justify-self: center;
+}
+
+.registration input:not([type="submit"]) {
+  width: 40%;
+  justify-self: center;
+  border-radius: 5px;
+  outline: none;
+  height: 40px;
+  border: none;
+  color: black;
+}
+
+.registration input[type="submit"] {
+  width: 20%;
+  justify-self: center;
+  height: 40px;
+  border-radius: 5px;
+  background-color: #d35400;
+  color: white;
+  margin-top: 40px;
+  font-size: 15pt;
+  margin-bottom: 20px;
+}
