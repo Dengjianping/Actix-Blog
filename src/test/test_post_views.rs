@@ -87,6 +87,23 @@ fn test_all_post() {
 }
 
 #[test]
+fn test_show_posts_by_year() {
+    // before run this test case, it needs a default post.
+    insert_posts();
+    
+    let mut app = test::init_service(App::new().data(test_db_pool().unwrap().clone())
+        .service(fs::Files::new("/static", "static/").show_files_listing())
+        .service(
+            web::scope("/").service(web::resource("/category/{year}/").route(web::get().to_async(views::post::show_posts_by_year)))
+        )
+    );
+    
+    let req = test::TestRequest::get().uri("/category/2019/").to_request();
+    let resp = test::block_on(app.call(req)).unwrap();
+    assert_eq!(resp.status(), http::StatusCode::OK);
+}
+
+#[test]
 fn test_all_pagination() {
     // before run this test case, it needs a default post.
     insert_posts();
