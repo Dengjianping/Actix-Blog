@@ -7,12 +7,10 @@ BTW, I'm literally not that good at front-end.
 
 ## Thanks to these resources
 - ### Front-End
-1. **Bootstrap** 4.x.
-2. Blog templates from **[Start Bootstrap - Clean Blog](https://github.com/BlackrockDigital/startbootstrap-clean-blog)**.
-3. Admin templates from **[Start Bootstrap - SB Admin](https://github.com/BlackrockDigital/startbootstrap-sb-admin)**.
-4. **[Showdown](https://github.com/showdownjs/showdown)** for rendering markdown.
-5. **Jquery**
-6. **[Js.cookie](https://github.com/js-cookie/js-cookie)**(for cookies handling)
+1. I abandoned bootstrap to build the front-end, written it from zero, but still kind of ugly.
+2. **[Showdown](https://github.com/showdownjs/showdown)** for rendering markdown.
+3. **Jquery**
+4. **[Js.cookie](https://github.com/js-cookie/js-cookie)**(for cookies handling)
 
 - ### Back-End
 1. The blazingly fast **asynchronous** web framework based on Rust: **actix-web**
@@ -76,8 +74,9 @@ cargo test
 Tips: All test cases are under [src/test](https://github.com/Dengjianping/Actix-Blog/tree/master/src/test).
 
 ## Glance
-![main page](samples/blog_page.JPG)
-![admin page](samples/admin_page.JPG)
+![main page](samples/index.JPG)
+![admin page](samples/404.JPG)
+![admin page](samples/write_post.JPG)
 
 ## Features
 - Sign-in/out
@@ -85,6 +84,7 @@ Tips: All test cases are under [src/test](https://github.com/Dengjianping/Actix-
 - Register
 - Comment system(ajax)
 - Use likes(ajax)
+- Category
 - Search
 - Basic admin privileges
 - Markdown supporting.
@@ -93,7 +93,7 @@ Tips: All test cases are under [src/test](https://github.com/Dengjianping/Actix-
     ```
     cargo run --release --features "http2"
     ```
-    - Visit your site with prefix 
+    - Visit the site. 
     ```
     https://your_address:port_num/
     ```
@@ -101,8 +101,6 @@ Tips: All test cases are under [src/test](https://github.com/Dengjianping/Actix-
 
 ## Future
 - Redis.
-- Category.
-- Archive.
 - Dockerfile.
 - OAuth. Allow 3rd-party user log-in, like webchat/github/google/apple... .
 - The webUI may be rewritten by webassembly(I did some research, several webassembly frameworks is available now
