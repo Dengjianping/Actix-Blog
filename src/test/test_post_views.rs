@@ -28,8 +28,6 @@ fn test_index() {
 }
 
 #[test]
-#[ignore]
-#[should_panic(expected = "this page is unimplemented.")]
 fn test_page_404() {
     let mut app = test::init_service(App::new()
         .service(fs::Files::new("/static", "static/").show_files_listing())
@@ -40,7 +38,7 @@ fn test_page_404() {
     
     let req = test::TestRequest::get().uri("/not_found/").to_request();
     let resp = test::block_on(app.call(req)).unwrap();
-    assert_eq!(resp.status(), http::StatusCode::OK);
+    assert_eq!(resp.status(), http::StatusCode::NOT_FOUND);
 }
 
 #[test]
