@@ -1,0 +1,36 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Show All Posts{% endblock title %}
+
+{% block head %}
+<link href="/static/css/admin/all_posts.css" rel="stylesheet" media="screen"/>
+{% endblock head %}
+
+{% block content %}
+<header>
+    <nav>
+        <a href="/admin/dashboard/">DashBoard</a>
+        <a href="/admin/all_posts/">All Posts</a>
+        <a href="/admin/write_post/">Wrire Post</a>
+        <a href="/admin/about_self/">About</a>
+    </nav>
+    <input type="search" placeholder="keyword">
+    <a href="/admin/about_self/" class="user">{{ username }}</a>
+    <a href="/admin/logout/" class="logout">Logout</a>
+</header>
+<div class="main">
+    {% if posts %}
+    {% for post in posts %}
+    <div class="post">
+        <a href="/admin/{{ post.title }}" class="title">{{ post.title | title }}</a>
+        <time>{{ post.publish | date(format="%Y-%m-%d-%h") }}</time>
+        <p></p>
+        <ul>
+            <li>{{ post.status }}</li>
+            <li><a href="/admin/{{ post.title }}/">Modify</a></li>
+        </ul>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endblock content %}

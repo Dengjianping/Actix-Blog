@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>{% block title %}{% endblock title %}</title>
+    <link href="/static/css/base.css" rel="stylesheet" media="screen" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.0/showdown.min.js" charset="utf8"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
+    {% block head %}{% endblock head %}
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="/index/">Home</a>
+            <a href="/all_posts/">All Posts</a>
+            <a href="#">Top Visited</a>
+            <a href="/contact/">Contact</a>
+            <a href="/about/">About</a>
+        </nav>
+        <form action="/search/" method="POST" id="search">
+            <input type="search" placeholder="keyword" required=true name="key_word">
+            <input type="submit" value="Search">
+        </form>
+    </header>
+    
+    {% block content %}{% endblock content %}
+    
+    <footer>
+        <span>Copyright &copy; 2019 All Rights Reserved</span>
+    </footer>
+</body>

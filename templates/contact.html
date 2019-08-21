@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock title %}
+
+{% block head %}
+<link href="/static/css/contact.css" rel="stylesheet" media="screen"/>
+{% endblock head %}
+
+{% block content %}
+<div class="main">
+    <p>Leave a message to me.</p>
+    <form method="POST" action="" class="make_friend">
+        <label id="message">Message: </label>
+        <textarea type="text" id="message" required=true></textarea>
+        <label id="name">Name: </label>
+        <input type="text" id="name" required=true>
+        <label id="email">Email: </label>
+        <input type="email" id="email" required=true>
+        <input type="submit" value="Submit">
+    </form>
+</div>
+{% endblock content %}

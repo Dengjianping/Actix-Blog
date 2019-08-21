@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Search Result{% endblock title %}
+
+{% block head %}
+<link href="/static/css/contact.css" rel="stylesheet" media="screen"/>
+<style>
+.search {
+  width: 60%;
+  margin: auto;
+  margin-top: 40px;
+}
+
+.found {
+  border-bottom: solid;
+  border-bottom-color: #e67e22;
+  border-width: 1px;
+}
+
+.found:last-child {
+  border: none;
+}
+
+.search p {
+  font-size: 12pt;
+  text-align: left;
+  margin-left: 0;
+}
+
+.search a {
+  text-decoration-color: #e67e22;
+  color: #e67e22;
+}
+</style>
+{% endblock head %}
+
+{% block content %}
+<div class="main">
+    <div class="search">
+    {% if posts %}
+    {% for post in posts | reverse %}
+        <div class="found">
+            <a href="/article/{{ post.title }}/">{{ post.title }}</a>
+            <p id="short_body">{{ post.body | truncate(length=50, end="...") }}</p>
+        </div>
+    {% endfor %}
+    {% else %}
+        <p>Nothing Found.</p>
+    {% endif %}
+    </div>
+</div>
+{% endblock content %}

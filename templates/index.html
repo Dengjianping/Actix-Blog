@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Index{% endblock title %}
+
+{% block head %}
+<link href="/static/css/index.css" rel="stylesheet" media="screen" />
+<script>
+$(document).ready(function(e) {
+    var md = $('#short_body').text().trimLeft();
+    $('#short_body').empty();
+    var target = document.getElementById('short_body');
+    var converter = new showdown.Converter();
+    html = converter.makeHtml(md);
+    target.innerHTML = html;
+    $('#short_body').show();
+})
+</script>
+{% endblock head %}
+
+{% block content %}
+<div class="main">
+    <div class="posts">
+        {% if curr_posts %}
+        {% for post in curr_posts | slice(end=5) %}
+        <div class="preview" >
+            <a href="/article/{{ post.title }}/">
+                <p>{{ post.title }}</p>
+            </a>
+            <a href="/article/{{ post.title }}/" id="short_body">
+                <p>{{ post.body | truncate(length=100, end="...") }}</p>
+            </a>
+            <p class="submit-time">
+                <span>#{{ post.slug }}</span>
+                <span>{{ post.likes }} likes</span>
+                <span>comments</span>
+                <span>{{ post.publish | date }}</span>
+            </p>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+    <div class="sidebar">
+        <div class="tags">
+            <p>Tags</p>
+            <div>
+                <a href="#">diesel</a>
+                <a href="#">sql</a>
+                <a href="#">css</a>
+                <a href="#">html</a>
+                <a href="#">full-stack</a>
+                <a href="#">actix</a>
+                <a href="#">rust</a>
+            </div>
+        </div>
+        <div class="archived">
+            <p>Archived</p>
+            <ul>
+                {% for cag in time_categories %}
+                <li><a href="/category/{{ cag }}/">{{ cag }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="pagination">
+    <ul>
+        <li><a href="#"><<</a></li>
+        {% if posts_num %}
+        {% for post in range(end=posts_num) %}
+        <li id="{{ loop.index }}"><a href="/page/{{ loop.index }}/">{{ loop.index }}</a></li>
+        {% endfor %}
+        {% endif %}
+        <li><a href="#">>></a></li>
+    </ul>
+</div>
+{% endblock content %}

@@ -1,0 +1,22 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Login{% endblock title %}
+
+{% block head %}
+<link href="/static/css/admin/login.css" rel="stylesheet" media="screen"/>
+{% endblock head %}
+
+{% block content %}
+<div class="main">
+    <form action="/admin/login/" method="POST" id="login">
+        <label>Login</label>
+        <label id="name">User Name: </label>
+        <input type="text" id="name" required=true placeholder="username or email" name="username">
+        <label id="password">Password: </label>
+        <input type="password" id="password" required=true name="password">
+        <a href="#" class="forget">Forget Password?</a>
+        <input type="submit" value="Submit">
+        <a href="/admin/register/" class="new_user">New User?</a>
+    </form>
+</div>
+{% endblock content %}

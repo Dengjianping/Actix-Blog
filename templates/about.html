@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock title %}
+
+{% block head %}
+<style>
+table {
+    width: 60%;
+    margin: auto;
+    margin-top: 200px;
+}
+
+table, table tr td {
+    border: solid;
+    border-collapse: collapse;
+    border-color: #e67e22;
+}
+
+table tr td {
+    border-left: none;
+}
+</style>
+{% endblock head %}
+
+{% block content %}
+<div class="main">
+    <table>
+        <tr>
+            <td>Name: </td>
+            <td>Jamie</td>
+        </tr>
+        <tr>
+            <td>Github: </td>
+            <td><a href="#">https://github.com/Dengjianping</a></td>
+        </tr>
+        <tr>
+            <td>Email: </td>
+            <td>djptux@gmail.com</td>
+        </tr>
+        <tr>
+            <td>Profile: </td>
+            <td>I love rust, python, CUDA...</td>
+        </tr>
+    </table>
+</div>
+{% endblock content %}

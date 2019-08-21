@@ -1,0 +1,36 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Dashboard{% endblock title %}
+
+{% block head %}
+    <link href="/static/css/admin/admin_base.css" rel="stylesheet" media="screen"/>
+    <link href="/static/css/admin/dashboard.css" rel="stylesheet" media="screen"/>
+{% endblock head %}
+
+{% block content %}
+<header>
+    <nav>
+        <a href="/admin/dashboard/">DashBoard</a>
+        <a href="/admin/all_posts/">All Posts</a>
+        <a href="/admin/write_post/">Wrire Post</a>
+        <a href="/admin/about_self/">About</a>
+    </nav>
+    <input type="search" placeholder="keyword">
+    <a href="/admin/about_self/" class="user">{{ username }}</a>
+    <a href="/admin/logout/" class="logout">Logout</a>
+</header>
+<div class="main">
+    <div class="messages">
+        <p>Today's Messages</p>
+        <a href="/admin/all_guests_messages/">{{ messages_count | default(value=0) }} messages.</a>
+    </div>
+    <div class="comments">
+        <p>Today's comments</p>
+        <a href="/admin/today_comments/">{{ comments_count | default(value=0) }} comments.</a>
+    </div>
+    <div class="visitors">
+        <p>Today's visitors</p>
+        <span>120 visitors.</span>
+    </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,50 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}About Yourself{% endblock title %}
+
+{% block head %}
+<link href="/static/css/admin/all_posts.css" rel="stylesheet" media="screen"/>
+<style>
+.main ul {
+  list-style-type: none;
+  margin: auto;
+  width: 60%;
+}
+
+ul li {
+  border-bottom: solid;
+  border-bottom-width: 1px;
+  border-bottom-color: #e67e22;
+  margin-top: 20px;
+  text-align: left;
+}
+</style>
+{% endblock head %}
+
+{% block content %}
+<header>
+    <nav>
+        <a href="/admin/dashboard/">DashBoard</a>
+        <a href="/admin/all_posts/">All Posts</a>
+        <a href="/admin/write_post/">Wrire Post</a>
+        <a href="/admin/about_self/">About</a>
+    </nav>
+    <input type="search" placeholder="keyword">
+    <a href="/admin/about_self/" class="user">{{ username }}</a>
+    <a href="/admin/logout/" class="logout">Logout</a>
+</header>
+<div class="main">
+    {% if yourself %}
+    <ul>
+        <li>UserName: {{ yourself.username }}</li>
+        <li>First Name: {{ yourself.first_name }}</li>
+        <li>Last Name: {{ yourself.last_name }}</li>
+        <li>Email: {{ yourself.email }}</li>
+        <li>Joined on: {{ yourself.date_joined | date(format="%Y-%m-%d") }}</li>
+        <li>Last logined on: {{ yourself.last_login | date(format="%Y-%m-%d") }}</li>
+        <li>Staff: {{ yourself.is_staff }}</li>
+        <li>Superuser: {{ yourself.is_superuser }}</li>
+    </ul>
+    {% endif %}
+</div>
+{% endblock content %}

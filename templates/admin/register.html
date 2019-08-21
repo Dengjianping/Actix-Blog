@@ -1,0 +1,73 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Registration{% endblock title %}
+
+{% block head %}
+<link href="/static/css/admin/register.css" rel="stylesheet" media="screen"/>
+<script>
+$(document).ready(function(e) {
+    $(".password").keyup(function(event) {
+        if (event.keyCode === 13) {
+            $("#submit").click();
+        }
+    });
+
+    $('.username').on('blur', function(){
+        $("#user_exist").hide();
+        if ($('.username').val() != '') {
+            $.ajax({
+            type: "POST",
+            url: "/admin/user_exist/",
+            contentType: "application/json; charset=utf-8;",
+            data: JSON.stringify({'username': $('.username').val()}), // must use stringify to serialize json data
+            timeout: 10000,
+            success: function(data) {
+                if (data) {
+                    $("#user_exist").show();
+                }
+                }
+            })
+        }
+    });
+
+    $('.email').on('blur', function(){
+        $("#email_exist").hide();
+        if ($('.email').val() != '') {
+            $.ajax({
+            type: "POST",
+            url: "/admin/email_exist/",
+            contentType: "application/json; charset=utf-8;",
+            data: JSON.stringify({'email': $('.email').val()}), // must use stringify to serialize json data
+            timeout: 10000,
+            success: function(data) {
+                if (data) {
+                    $("#email_exist").show();
+                }
+            }
+            })
+        }
+    });
+})
+</script>
+{% endblock head %}
+
+{% block content %}
+<div class="main">
+    <form action="/admin/register/" method="POST" class="registration">
+        <label>Registration</label>
+        <label id="name">User Name: </label>
+        <input type="text" id="name" required=true placeholder="username" name="username" class="username">
+        <span style="display:none;" id="user_exist">username existed.</span>
+        <label id="password">Password: </label>
+        <input type="password" id="password" required=true placeholder="password" name="password" class="password">
+        <label id="email">Email: </label>
+        <input type="email" id="email" required=true name="email" class="email">
+        <span style="display:none;" id="email_exist">email existed.</span>
+        <label id="fname">FirstName: </label>
+        <input type="text" id="fname" required=true name="first_name" class="first_name">
+        <label id="lname">LastName: </label>
+        <input type="text" id="lname" required=true name="last_name" class="last_name">
+        <input type="submit" value="Create" id="submit">
+    </form>
+</div>
+{% endblock content %}

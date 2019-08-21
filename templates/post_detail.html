@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }}{% endblock title %}
+
+{% block head %}
+<link href="/static/css/post_detail.css" rel="stylesheet" media="screen"/>
+<script>
+$(document).ready(function(e) {
+    showdown.setFlavor('github');
+    // showdown.setOption('omitExtraWLInCodeBlocks', true);
+    // console.log(showdown.getOptions());
+    // cannot use body | safe here to render markdown due to escape problem
+    // I have to hide the body div first, then get the markdown back, then use showdown to handle.
+    // it looks template engine issue, tera
+    // console.log(document.getElementById('#markdown').innerHTML);
+    var md = $('#markdown').text().trimLeft(); // there're lots of empty space ahead of markdown
+    $('#markdown').empty();
+    var converter = new showdown.Converter();
+    html = converter.makeHtml(md);
+    $('#markdown').append(html);
+    $('#markdown').show();
+
+    $("#like").click(function(event, data){
+        var n = $("#count").text();
+        n = parseInt(n) + 1;
+        $.ajax({
+            type: "POST",
+            url: "/user_likes/",
+            contentType: "application/json; charset=utf-8;",
+            data: JSON.stringify({'likes_count': n}), // must use stringify to serialize json data
+            timeout: 10000,
+            success: function(data) {
+                if (data) {
+                    $("#count").text(n);
+                }
+            }
+        })
+    });
+
+    $("#submit_comment").click(function(event, data){
+        event.preventDefault();
+        var username = $(".guest_name").val();
+        var email = $(".guest_email").val();
+        var comment_content = $(".comment_content").val();
+        console.log(JSON.stringify({'username': username, 'email': email, 'comment': comment_content}));
+        $.ajax({
+            type: "POST",
+            url: "/add_comment/",
+            contentType: "application/json; charset=utf-8;",
+            // must use stringify to serialize json data
+            data: JSON.stringify({'username': username, 'email': email, 'comment': comment_content}), 
+            timeout: 10000,
+            success: function(data) {
+                var new_comment = "<li><div class='comments'><p>" + username + 
+                                  "</p><ul><li>4 likes</li><li>" + Date() + 
+                                  "</li><li><button>reply</button></li></ul><p>" + comment_content + 
+                                  "</p></div></li>";
+                $('#all_comments').append(new_comment);
+            },
+            error: function(data) {
+                console.log('error happened.')
+                console.log(data);
+            }
+        })
+    });
+})
+</script>
+{% endblock head %}
+
+{% block content %}
+<div class="main">
+    <h3>{{ post.title }}</h3>
+    <button id="like"><span id="count">{{ post.likes }}</span> Likes</button>
+    <article id="markdown">
+    {{ post.body | safe }}
+    </article>
+</div>
+<div id="comments_list">
+    <ul id="all_comments">
+        {% if comments %}
+        {% for comment in comments %}
+        <li>
+            <div class="comments">
+                <p>{{ comment.username }}</p>
+                <ul>
+                    <li style="display: none">4 likes</li>
+                    <li>{{ comment.committed_time | date(format="%Y-%m-%d") }}</li>
+                    <li><button>reply</button></li>
+                </ul>
+                <p>{{ comment.comment }}</p>
+            </div>
+        </li>
+        {% endfor %}
+        {% endif %}
+    </ul>
+</div>
+<div class="submit-comment">
+    <form>
+        <label id="comment">Comment: </label>
+        <textarea type="text" id="comment" required=true class="comment_content"></textarea>
+        <label id="name">Name: </label>
+        <input type="text" id="name" class="guest_name" required=true>
+        <label id="email">Email: </label>
+        <input type="email" id="email" class="guest_email" required=true>
+        <input type="submit" value="Submit" id="submit_comment">
+    </form>
+</div>
+{% endblock content %}

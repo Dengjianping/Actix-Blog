@@ -1,0 +1,62 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Dashboard{% endblock title %}
+
+{% block head %}
+<link href="/static/css/admin/admin_base.css" rel="stylesheet" media="screen"/>
+<link href="/static/css/admin/write_post.css" rel="stylesheet" media="screen"/>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+<script>
+$(document).ready(function(e) {
+    if (Cookies.get('markdown') && Cookies.get('markdown')) {
+        var prev_html = document.getElementById('preview');
+        var editor_md = document.getElementById('markdown');
+        prev_html.innerHTML = Cookies.get('preview');
+        editor_md.value = Cookies.get('markdown');
+    }
+
+    $("#markdown").bind('change keyup', function(event) {
+        var text = document.getElementById('markdown').value,
+            target = document.getElementById('preview'),
+            converter = new showdown.Converter(),
+            html = converter.makeHtml(text);
+        Cookies.set('markdown', text);
+        Cookies.set('preview', html);
+        target.innerHTML = html;
+    });
+})
+</script>
+{% endblock head %}
+
+{% block content %}
+<header>
+    <nav>
+        <a href="/admin/dashboard/">DashBoard</a>
+        <a href="/admin/all_posts/">All Posts</a>
+        <a href="/admin/write_post/">Wrire Post</a>
+        <a href="/admin/about_self/">About</a>
+    </nav>
+    <input type="search" placeholder="keyword">
+    <a href="/admin/about_self/" class="user">{{ username }}</a>
+    <a href="/admin/logout/" class="logout">Logout</a>
+</header>
+<div class="main">
+    <form action="/admin/write_post/" method="POST" class="write_post">
+        <div>
+            <span>Title: </span><input type="text" required=true name="title">
+            <span>Tags: </span><input type="text" required=true placeholder="#python, #sql, ..." name="slug">
+            <span>Status: </span><input type="text" required=true placeholder="publish/draft, ..." name="status">
+            <!-- <select required> -->
+                <!-- <option value="publish">Publish</option> -->
+                <!-- <option value="draft">Draft</option> -->
+            <!-- </select> -->
+            <input type="submit" value="Submit">
+        </div>
+        <div class="editor">
+            <textarea required=true placeholder="markdown style" id="markdown" name="body"></textarea>
+            <div id="preview"></div>
+        </div>
+    </form>
+</div>
+</div>
+{% endblock content %}

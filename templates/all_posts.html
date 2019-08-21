@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}All Posts{% endblock title %}
+
+{% block head %}
+<style>
+.main {
+  margin: 10px auto 0 auto;
+  width: 60%;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  grid-template-rows: auto;
+  grid-row-gap: 10px;
+  grid-column-gap: 10px;
+}
+
+.post {
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: column;
+  background-color: #7f8c8d;
+  border-radius: 8px;
+}
+
+.post p {
+  border-bottom: solid;
+  border-bottom-color: #34495e;
+  border-bottom-width: 2px;
+  width: 60%;
+  font-size: 14pt;
+}
+
+time {
+  font-size: 10pt;
+}
+
+.post div {
+  font-size: 12pt;
+}
+
+.post a {
+  text-align: right;
+  align-self: flex-end;
+  font-size: 12pt;
+  margin-right: 5px;
+  color: black;
+}
+</style>
+{% endblock head %}
+
+{% block content %}
+<div class="main">
+    {% if posts %}
+    {% for post in posts | reverse %}
+    <div class="post">
+        <p>{{ post.title }} @ <time>{{ post.publish | date }}</time></p>
+        <div>{{ post.body | truncate(length=30, end="...") }}</div>
+        <a href="/article/{{ post.title }}/">detail</a>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endblock content %}

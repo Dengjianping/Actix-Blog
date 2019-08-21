@@ -1,0 +1,49 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Guest Messages{% endblock title %}
+
+{% block head %}
+<style>
+.main ul {
+  list-style-type: none;
+  margin: auto;
+  width: 60%;
+}
+
+ul li {
+  border-bottom: solid;
+  border-bottom-width: 1px;
+  border-bottom-color: #e67e22;
+  margin-top: 20px;
+  text-align: left;
+}
+</style>
+{% endblock head %}
+
+{% block content %}
+<header>
+    <nav>
+        <a href="/admin/dashboard/">DashBoard</a>
+        <a href="/admin/all_posts/">All Posts</a>
+        <a href="/admin/write_post/">Wrire Post</a>
+        <a href="/admin/about_self/">About</a>
+    </nav>
+    <input type="search" placeholder="keyword">
+    <a href="/admin/about_self/" class="user">{{ username }}</a>
+    <a href="/admin/logout/" class="logout">Logout</a>
+</header>
+<div class="main">
+    {% if comments %}
+    {% for title, comment in comments %}
+    {% for c in comment %}
+    <ul>
+        <li><a href="/article/{{ title }}/">{{ title }}</a></li>
+        <li>{{ c.comment }}</li>
+        <li>commented by {{ c.username }}</li>
+        <li>commented on {{ c.committed_time | date(format="%Y-%m-%d") }}</li>
+    </ul>
+    {% endfor %}
+    {% endfor %}
+    {% endif %}
+</div>
+{% endblock content %}

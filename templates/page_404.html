@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}404{% endblock title %}
+
+{% block head %}
+<style>
+.main {
+  width: 60%;
+  margin: auto;
+  text-align: center;
+  color: #e67e22;
+  font-size: 35pt;
+}
+
+.taiqi {
+  width: 480px;
+  height:480px;
+  border-radius:50%;
+  background: linear-gradient(to right, white 50%, #e67e22 50%);
+  border:solid;
+  border-color: #e67e22;
+  margin: auto;
+}
+
+.top, .bottom {
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  
+  margin:auto;
+}
+
+.bottom {
+  background-color: #e67e22;
+}
+
+.top {
+  background-color: white;
+}
+
+.white_eye, .black_eye {
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  margin:auto;
+  vertical-align: middle;
+}
+
+.black_eye {
+  background-color: #e67e22;
+  top: 60px;
+  position: relative;
+  /* margin: auto 0; */
+  color: white;
+  text-align: center;
+}
+
+.white_eye {
+  text-align: center;
+  background-color: white;
+  top: 60px;
+  position: relative;
+  color: #e67e22;
+}
+</style>
+{% endblock head %}
+
+{% block content %}
+<div class="main">
+    <div class="taiqi">
+        <div class="top">
+            <div class="black_eye">4</div>
+        </div>
+        <div class="bottom">
+            <div class="white_eye">4</div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
