@@ -1,10 +1,11 @@
 use actix_web::{ web, Error as HttpResponseErr, HttpResponse };
 use actix_session::Session;
-use chrono::NaiveDateTime;
+use chrono::{ NaiveDateTime, Datelike };
 
 use futures::{ future::result as FutResult, future::err as FutErr, Future };
 use serde_derive::{ Deserialize, Serialize };
 use tera;
+use itertools::Itertools;
 
 use crate::utils::utils::{ PgPool, COMPILED_TEMPLATES };
 use crate::models::post::{ PostStatus, Post, PostOperation };
@@ -54,14 +55,15 @@ pub(crate) fn show_all_posts(
     match all_posts {
         Ok(posts) => {
             let mut ctx = tera::Context::new();
+            let time_categories = posts.iter().map(|post| post.created.map(|time| time.year())).unique().collect::<Vec<Option<i32>>>();
+            ctx.insert("time_categories", &time_categories);
             if posts.len() <= PAGE {
                 ctx.insert("posts", &posts.get(0..));
             } else {
-                ctx.insert("posts", &posts.get(0..PAGE));
+                ctx.insert("curr_posts", &posts.get(0..PAGE));
+                let posts_num = if posts.len() % PAGE == 0 { posts.len () / PAGE } else { posts.len () / PAGE + 1 };
+                ctx.insert("posts_num", &posts_num);
             }
-            
-            // indicate next the page number
-            ctx.insert("page_num", &2);
             
             let template = COMPILED_TEMPLATES.render("index.html", ctx);
             match template {
@@ -86,22 +88,18 @@ pub(crate) fn pagination(
             let created_time: Vec<Option<&NaiveDateTime>> = posts.iter().map(|post| post.publish.as_ref()).collect();
             ctx.insert("created_time", &created_time);
             
-            let range = if (*page_num * (PAGE + 1)).lt(&posts.len()) {
-                ctx.insert("page_num", &(*page_num + 1));
-                ctx.insert("last_page", &false);
-                (*page_num - 1) * PAGE..*page_num * (PAGE + 1)
-            } else if ((*page_num - 1) * PAGE).lt(&posts.len()) {
-                ctx.insert("page_num", &*page_num);
-                ctx.insert("last_page", &true);
-                (*page_num - 1) * PAGE..posts.len()
+            let time_categories = posts.iter().map(|post| post.created.map(|time| time.year())).unique().collect::<Vec<Option<i32>>>();
+            ctx.insert("time_categories", &time_categories);
+            
+            let range = if (*page_num * PAGE).lt(&posts.len()) {
+                (*page_num - 1) * PAGE..*page_num * PAGE
             } else {
-                // in case the page_num is much bigger than then length of posts.
-                // maybe the page_num is inputed by manually, so go back to index page
-                ctx.insert("page_num", &2);
-                ctx.insert("last_page", &false);
-                0..PAGE
+                (*page_num - 1) * PAGE..(*page_num - 1) * PAGE + posts.len() % PAGE
             };
-            ctx.insert("posts", &posts[range]);
+            // ctx.insert("curr_posts", &posts[range]);
+            ctx.insert("curr_posts", &posts.get(range));
+            let posts_num = if posts.len() % PAGE == 0 { posts.len () / PAGE } else { posts.len () / PAGE + 1 };
+            ctx.insert("posts_num", &posts_num);
 
             let template = COMPILED_TEMPLATES.render("index.html", ctx);
             match template {
@@ -206,8 +204,29 @@ pub(crate) fn all_posts(db: web::Data<PgPool>) -> impl Future<Item=HttpResponse,
     }
 }
 
+pub(crate) fn show_posts_by_year(
+    year: web::Path<i32>,
+    db: web::Data<PgPool>
+) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
+    let all_posts = PostOperation::get_posts_by_year(*year, &db);
+
+    match all_posts {
+        Ok(posts) => {
+            let mut ctx = tera::Context::new();
+            ctx.insert("posts", &posts);
+            
+            let template = COMPILED_TEMPLATES.render("all_posts.html", ctx);
+            match template {
+                Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
+                Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
+            }
+        }
+        Err(e) => FutErr(ErrorKind::DbOperationError(e.to_string()))
+    }
+}
+
 pub(crate) fn page_404() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
-    let template = COMPILED_TEMPLATES.render("404.html", tera::Context::new());
+    let template = COMPILED_TEMPLATES.render("page_404.html", tera::Context::new());
             
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::NotFound().content_type("text/html").body(t))),
@@ -225,7 +244,6 @@ pub(crate) fn add_comment(
     if let Ok(Some(id)) = article_id {
         let new_comment = NewComment::new(&comment, id);
         let _ = CommentOperation::insert_comment(new_comment, &db);
-        
         FutResult(Ok(HttpResponse::Ok().json(true)))
     } else {
         FutResult(Ok(HttpResponse::InternalServerError().into()))
