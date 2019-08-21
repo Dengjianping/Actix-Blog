@@ -1,5 +1,5 @@
 use actix_web::web::Data;
-use chrono::{ NaiveDateTime, Utc };
+use chrono::{ NaiveDateTime, NaiveDate, Utc };
 use diesel::prelude::*;
 use serde_derive::{ Deserialize, Serialize };
 
@@ -149,5 +149,17 @@ impl PostOperation {
         } else {
             Ok(Status::Failure)
         }
+    }
+    
+    pub(crate) fn get_posts_by_year(year: i32, pool: &Data<PgPool>) -> Result<Vec<Post>, failure::Error> {
+        use schema::posts::dsl::*;
+        let conn = &*pool.get()?;
+        
+        let year_begin: NaiveDateTime = NaiveDate::from_ymd(year, 1, 1).and_hms(0, 0, 0);
+        let year_end: NaiveDateTime = NaiveDate::from_ymd(year + 1, 1, 1).and_hms(0, 0, 0);
+        let all_posts = posts.filter(schema::posts::status.eq("publish"))
+                             .filter(schema::posts::created.between(year_begin, year_end))
+                             .order(schema::posts::id.asc()).load::<Post>(conn)?;
+        Ok(all_posts)
     }
 }
