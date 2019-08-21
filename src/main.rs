@@ -95,6 +95,7 @@ fn main() -> Result<(), failure::Error> {
                     .service(web::resource("/search/").route(web::post().to_async(views::post::search)))
                     .service(web::resource("/page/{page_num}/").route(web::get().to_async(views::post::pagination)))
                     .service(web::resource("/article/{title}/").route(web::get().to_async(views::post::post_detail)))
+                    .service(web::resource("/category/{year}/").route(web::get().to_async(views::post::show_posts_by_year)))
             )
     )
     .workers(workers);
