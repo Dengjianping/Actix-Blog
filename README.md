@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.com/Dengjianping/Actix-Blog.svg?branch=master)](https://travis-ci.com/Dengjianping/Actix-Blog)
 
 ## About this project
-There're two branches, the **master** uses actix-web 1.0, branch **v0.7** uses actix-web 0.7.x.
+There're two branches, the **master** uses actix-web 2.0, branch **v1.0** uses actix-web 1.x, branch **v0.7** uses actix-web 0.7.x.
 
 BTW, I'm literally not that good at front-end.
 
