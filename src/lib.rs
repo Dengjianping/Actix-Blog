@@ -23,6 +23,7 @@ pub fn login_required(_: TokenStream, func: TokenStream) -> TokenStream {
     
     let func_sig = func.sig;
     let func_name = func_sig.ident;
+    let asyncness = func_sig.asyncness;
     let func_inputs = func_sig.inputs;
     let func_output = func_sig.output;
     let func_generics = func_sig.generics;
@@ -31,7 +32,6 @@ pub fn login_required(_: TokenStream, func: TokenStream) -> TokenStream {
         match i {
             // https://docs.rs/syn/1.0.1/syn/struct.PatType.html
             FnArg::Typed(ref pat_type) => {
-                //dbg!(&i);
                 let identity_type = pat_type.ty.clone().into_token_stream();
                 let identity_type_name = identity_type.to_string();
                 if identity_type_name.eq("Identity") {
@@ -47,7 +47,7 @@ pub fn login_required(_: TokenStream, func: TokenStream) -> TokenStream {
     
     let caller = quote!{
         // rebuild the function, add a func named is_expired to check user login session expire or not.
-        #func_vis fn #func_name #func_generics(#func_inputs) #func_output {
+        #func_vis #asyncness fn #func_name #func_generics(#func_inputs) #func_output {
             fn is_expired(#identity_param: &#identity_type) -> bool {
                 if let Some(_) = #identity_param.identity() {
                     false
@@ -57,7 +57,7 @@ pub fn login_required(_: TokenStream, func: TokenStream) -> TokenStream {
             }
             
             if is_expired(&#identity_param) {
-                FutErr(ErrorKind::IdentityExpiredError)
+                Err(ErrorKind::IdentityExpiredError)
             } else {
                 #func_block
             }

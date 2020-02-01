@@ -1,10 +1,8 @@
 [package]
 name = "actix_blog"
-version = "0.2.0"
-authors = ["jamie"]
+version = "0.3.0"
+authors = ["Jamie Deng <djptux@gmail.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
 proc-macro = true
@@ -22,18 +20,18 @@ http2 = []
 
 [dependencies]
 # web framework
-actix-web = { version = "1.0", features = ["ssl"] }
-actix = "0.8"
-actix-session = "0.2"
-actix-http = "0.2"
-actix-files = "0.1"
-actix-rt = "0.2"
-actix-identity = "0.1"
+actix-web = { version = "2.0", features = ["openssl"] }
+actix = "0.9"
+actix-session = "0.3"
+actix-http = "1.0"
+actix-files = "0.2"
+actix-rt = "1.0"
+actix-identity = "0.2"
 openssl = { version = "0.10", features = ["v110"] }
-futures = "0.1"
-bcrypt = "0.5"
+futures = "0.3"
+bcrypt = "0.6"
 itertools = "0.8"
-juniper = "0.13"
+juniper = "0.14"
 
 # error handler
 failure = "0.1"
@@ -41,21 +39,21 @@ failure = "0.1"
 # database orm
 diesel = { version = "1.4", features = ["postgres", "r2d2", "chrono"] }
 
-# for serilize and diserialize
+# for serialization and diserialization
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 
-num_cpus = "1.10"
+num_cpus = "1.12"
 chrono = { version = "0.4", features = ["serde", "rustc-serialize"] }
 toml = "0.5"
-regex = "1.2"
-lazy_static = "1.3"
-env_logger = "0.6"
-dotenv = "0.14"
+regex = "1.3"
+lazy_static = "1.4"
+env_logger = "0.7"
+dotenv = "0.15"
 
 # template engine
-tera = "1.0.0-beta.14"
+tera = "1.0"
 
 # for code genration, proc macro
 syn = { version = "1.0", features = ["full", "extra-traits"] }
@@ -63,11 +61,11 @@ quote = "1.0"
 proc-macro2 = "1.0"
 
 [dev-dependencies]
-actix-service = "0.4"
-bytes = "0.4"
+actix-service = "1.0"
+bytes = "0.5"
 serde_json = "1.0"
 rand = "0.7"
 
 [profile.release]
 opt-level = 3
-lto = true # optimization for Link-Time Optimizations
+lto = true

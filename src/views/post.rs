@@ -1,11 +1,8 @@
 use actix_web::{ web, Error as HttpResponseErr, HttpResponse };
 use actix_session::Session;
 use chrono::{ NaiveDateTime, Datelike };
-
-use futures::{ future::result as FutResult, future::err as FutErr, Future };
-use serde_derive::{ Deserialize, Serialize };
-use tera;
 use itertools::Itertools;
+use serde_derive::{ Deserialize, Serialize };
 
 use crate::utils::utils::{ PgPool, COMPILED_TEMPLATES };
 use crate::models::post::{ PostStatus, Post, PostOperation };
@@ -16,39 +13,39 @@ use crate::error_types::ErrorKind;
 const PAGE: usize = 4;
 
 
-pub(crate) fn about() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
-    let template = COMPILED_TEMPLATES.render("about.html", tera::Context::new());
+pub(crate) async fn about() -> Result<HttpResponse, ErrorKind> {
+    let template = COMPILED_TEMPLATES.render("about.html", &tera::Context::new());
     
     match template {
-        Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
-        Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
+        Ok(t) => Ok(HttpResponse::Ok().content_type("text/html").body(t)),
+        Err(e) => Err(ErrorKind::TemplateError(e.to_string()))
     }
 }
 
-pub(crate) fn contact() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
-    let template = COMPILED_TEMPLATES.render("contact.html", tera::Context::new());
+pub(crate) async fn contact() -> Result<HttpResponse, ErrorKind> {
+    let template = COMPILED_TEMPLATES.render("contact.html", &tera::Context::new());
     
     match template {
-        Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
-        Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
+        Ok(t) => Ok(HttpResponse::Ok().content_type("text/html").body(t)),
+        Err(e) => Err(ErrorKind::TemplateError(e.to_string()))
     }
 }
 
-pub(crate) fn add_contact(
+pub(crate) async fn add_contact(
     contact: web::Json<CreateContact>, 
     db: web::Data<PgPool>
-) -> impl Future<Item=HttpResponse, Error=HttpResponseErr> {
+) -> Result<HttpResponse, HttpResponseErr> {
     let new_contact = NewContact::new(&contact);
     if ContactOperation::insert_contact(new_contact, &db).is_ok() {
-        FutResult(Ok(HttpResponse::Ok().json(true)))
+        Ok(HttpResponse::Ok().json(true))
     } else {
-        FutResult(Ok(HttpResponse::Ok().json(false)))
+        Ok(HttpResponse::Ok().json(false))
     }
 }
 
-pub(crate) fn show_all_posts(
+pub(crate) async fn show_all_posts(
     db: web::Data<PgPool>
-) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
+) -> Result<HttpResponse, ErrorKind> {
     let status = PostStatus::Published;
     let all_posts = PostOperation::get_all_posts(status, &db);
     
@@ -65,20 +62,20 @@ pub(crate) fn show_all_posts(
                 ctx.insert("posts_num", &posts_num);
             }
             
-            let template = COMPILED_TEMPLATES.render("index.html", ctx);
+            let template = COMPILED_TEMPLATES.render("index.html", &ctx);
             match template {
-                Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
-                Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
+                Ok(t) => Ok(HttpResponse::Ok().content_type("text/html").body(t)),
+                Err(e) => Err(ErrorKind::TemplateError(e.to_string()))
             }
         }
-        Err(e) => FutErr(ErrorKind::DbOperationError(e.to_string()))
+        Err(e) => Err(ErrorKind::DbOperationError(e.to_string()))
     }
 }
 
-pub(crate) fn pagination(
+pub(crate) async fn pagination(
     page_num: web::Path<usize>, 
     db: web::Data<PgPool>
-) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
+) -> Result<HttpResponse, ErrorKind> {
     let status = PostStatus::Published;
     
     match PostOperation::get_all_posts(status, &db) {
@@ -101,37 +98,37 @@ pub(crate) fn pagination(
             let posts_num = if posts.len() % PAGE == 0 { posts.len () / PAGE } else { posts.len () / PAGE + 1 };
             ctx.insert("posts_num", &posts_num);
 
-            let template = COMPILED_TEMPLATES.render("index.html", ctx);
+            let template = COMPILED_TEMPLATES.render("index.html", &ctx);
             match template {
-                Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
-                Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
+                Ok(t) => Ok(HttpResponse::Ok().content_type("text/html").body(t)),
+                Err(e) => Err(ErrorKind::TemplateError(e.to_string()))
             }
         }
-        Err(e) => FutErr(ErrorKind::DbOperationError(e.to_string()))
+        Err(e) => Err(ErrorKind::DbOperationError(e.to_string()))
     }
 }
 
 new_struct!(Like, pub, [Debug, Clone, Serialize, Deserialize], (likes_count=>i32));
-pub fn user_likes(
+pub async fn user_likes(
     like: web::Json<Like>, 
     session: Session, 
     db: web::Data<PgPool>
-) -> impl Future<Item=HttpResponse, Error=HttpResponseErr> {
+) -> Result<HttpResponse, HttpResponseErr> {
     let article_id = session.get::<i32>("article_id");
     
     if let Ok(Some(post_id)) = article_id {
         let _ = PostOperation::update_likes((like.likes_count, post_id), &db);
-        FutResult(Ok(HttpResponse::Ok().json(true)))
+        Ok(HttpResponse::Ok().json(true))
     } else {
-        FutResult(Ok(HttpResponse::Ok().json(false)))
+        Ok(HttpResponse::Ok().json(false))
     }
 }
 
 new_struct!(Search, pub, [Debug, Clone, Serialize, Deserialize], (key_word=>String));
-pub(crate) fn search(
+pub(crate) async fn search(
     key_word: web::Form<Search>, 
     db: web::Data<PgPool>
-) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
+) -> Result<HttpResponse, ErrorKind> {
     let status = PostStatus::Published;
     let all_posts = PostOperation::get_all_posts(status, &db);
     
@@ -150,18 +147,18 @@ pub(crate) fn search(
         }
     };
     
-    let template = COMPILED_TEMPLATES.render("search.html", ctx);
+    let template = COMPILED_TEMPLATES.render("search.html", &ctx);
     match template {
-        Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
-        Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
+        Ok(t) => Ok(HttpResponse::Ok().content_type("text/html").body(t)),
+        Err(e) => Err(ErrorKind::TemplateError(e.to_string()))
     }
 }
 
-pub(crate) fn post_detail(
+pub(crate) async fn post_detail(
     title: web::Path<String>,
     session: Session, 
     db: web::Data<PgPool>
-) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
+) -> Result<HttpResponse, ErrorKind> {
     let post_found = PostOperation::get_post_by_title(&title, &db);
     
     match post_found {
@@ -174,18 +171,18 @@ pub(crate) fn post_detail(
             let related_comments = CommentOperation::get_comments_by_post(post.id, &db);
             let _ = related_comments.map(|comments| ctx.insert("comments", &comments));
             
-            let template = COMPILED_TEMPLATES.render("post_detail.html", ctx);
+            let template = COMPILED_TEMPLATES.render("post_detail.html", &ctx);
             match template {
-                Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
-                Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
+                Ok(t) => Ok(HttpResponse::Ok().content_type("text/html").body(t)),
+                Err(e) => Err(ErrorKind::TemplateError(e.to_string()))
             }
         }
-        Ok(None) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body("this post couldn't be found in database"))),
-        Err(e) => FutErr(ErrorKind::DbOperationError(e.to_string()))
+        Ok(None) => Ok(HttpResponse::Ok().content_type("text/html").body("this post couldn't be found in database")),
+        Err(e) => Err(ErrorKind::DbOperationError(e.to_string()))
     }
 }
 
-pub(crate) fn all_posts(db: web::Data<PgPool>) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
+pub(crate) async fn all_posts(db: web::Data<PgPool>) -> Result<HttpResponse, ErrorKind> {
     let status = PostStatus::Published;
     let all_posts = PostOperation::get_all_posts(status, &db);
 
@@ -194,20 +191,20 @@ pub(crate) fn all_posts(db: web::Data<PgPool>) -> impl Future<Item=HttpResponse,
             let mut ctx = tera::Context::new();
             ctx.insert("posts", &posts);
             
-            let template = COMPILED_TEMPLATES.render("all_posts.html", ctx);
+            let template = COMPILED_TEMPLATES.render("all_posts.html", &ctx);
             match template {
-                Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
-                Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
+                Ok(t) => Ok(HttpResponse::Ok().content_type("text/html").body(t)),
+                Err(e) => Err(ErrorKind::TemplateError(e.to_string()))
             }
         }
-        Err(e) => FutErr(ErrorKind::DbOperationError(e.to_string()))
+        Err(e) => Err(ErrorKind::DbOperationError(e.to_string()))
     }
 }
 
-pub(crate) fn show_posts_by_year(
+pub(crate) async fn show_posts_by_year(
     year: web::Path<i32>,
     db: web::Data<PgPool>
-) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
+) -> Result<HttpResponse, ErrorKind> {
     let all_posts = PostOperation::get_posts_by_year(*year, &db);
 
     match all_posts {
@@ -215,37 +212,37 @@ pub(crate) fn show_posts_by_year(
             let mut ctx = tera::Context::new();
             ctx.insert("posts", &posts);
             
-            let template = COMPILED_TEMPLATES.render("all_posts.html", ctx);
+            let template = COMPILED_TEMPLATES.render("all_posts.html", &ctx);
             match template {
-                Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
-                Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
+                Ok(t) => Ok(HttpResponse::Ok().content_type("text/html").body(t)),
+                Err(e) => Err(ErrorKind::TemplateError(e.to_string()))
             }
         }
-        Err(e) => FutErr(ErrorKind::DbOperationError(e.to_string()))
+        Err(e) => Err(ErrorKind::DbOperationError(e.to_string()))
     }
 }
 
-pub(crate) fn page_404() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
-    let template = COMPILED_TEMPLATES.render("page_404.html", tera::Context::new());
+pub(crate) async fn page_404() -> Result<HttpResponse, ErrorKind> {
+    let template = COMPILED_TEMPLATES.render("page_404.html", &tera::Context::new());
             
     match template {
-        Ok(t) => FutResult(Ok(HttpResponse::NotFound().content_type("text/html").body(t))),
-        Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
+        Ok(t) => Ok(HttpResponse::NotFound().content_type("text/html").body(t)),
+        Err(e) => Err(ErrorKind::TemplateError(e.to_string()))
     }
 }
 
-pub(crate) fn add_comment(
+pub(crate) async fn add_comment(
     comment: web::Json<CreateComment>, 
     session: Session, 
     db: web::Data<PgPool>
-) -> impl Future<Item=HttpResponse, Error=HttpResponseErr> {
+) -> Result<HttpResponse, HttpResponseErr> {
     let article_id = session.get::<i32>("article_id");
 
     if let Ok(Some(id)) = article_id {
         let new_comment = NewComment::new(&comment, id);
         let _ = CommentOperation::insert_comment(new_comment, &db);
-        FutResult(Ok(HttpResponse::Ok().json(true)))
+        Ok(HttpResponse::Ok().json(true))
     } else {
-        FutResult(Ok(HttpResponse::InternalServerError().into()))
+        Ok(HttpResponse::InternalServerError().into())
     }
 }
