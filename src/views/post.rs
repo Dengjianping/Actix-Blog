@@ -17,7 +17,7 @@ const PAGE: usize = 4;
 
 
 pub(crate) fn about() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
-    let template = COMPILED_TEMPLATES.render("about.html", tera::Context::new());
+    let template = COMPILED_TEMPLATES.render("about.html", &tera::Context::new());
     
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
@@ -26,7 +26,7 @@ pub(crate) fn about() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
 }
 
 pub(crate) fn contact() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
-    let template = COMPILED_TEMPLATES.render("contact.html", tera::Context::new());
+    let template = COMPILED_TEMPLATES.render("contact.html", &tera::Context::new());
     
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
@@ -65,7 +65,7 @@ pub(crate) fn show_all_posts(
                 ctx.insert("posts_num", &posts_num);
             }
             
-            let template = COMPILED_TEMPLATES.render("index.html", ctx);
+            let template = COMPILED_TEMPLATES.render("index.html", &ctx);
             match template {
                 Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
                 Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -101,7 +101,7 @@ pub(crate) fn pagination(
             let posts_num = if posts.len() % PAGE == 0 { posts.len () / PAGE } else { posts.len () / PAGE + 1 };
             ctx.insert("posts_num", &posts_num);
 
-            let template = COMPILED_TEMPLATES.render("index.html", ctx);
+            let template = COMPILED_TEMPLATES.render("index.html", &ctx);
             match template {
                 Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
                 Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -150,7 +150,7 @@ pub(crate) fn search(
         }
     };
     
-    let template = COMPILED_TEMPLATES.render("search.html", ctx);
+    let template = COMPILED_TEMPLATES.render("search.html", &ctx);
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
         Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -174,7 +174,7 @@ pub(crate) fn post_detail(
             let related_comments = CommentOperation::get_comments_by_post(post.id, &db);
             let _ = related_comments.map(|comments| ctx.insert("comments", &comments));
             
-            let template = COMPILED_TEMPLATES.render("post_detail.html", ctx);
+            let template = COMPILED_TEMPLATES.render("post_detail.html", &ctx);
             match template {
                 Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
                 Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -194,7 +194,7 @@ pub(crate) fn all_posts(db: web::Data<PgPool>) -> impl Future<Item=HttpResponse,
             let mut ctx = tera::Context::new();
             ctx.insert("posts", &posts);
             
-            let template = COMPILED_TEMPLATES.render("all_posts.html", ctx);
+            let template = COMPILED_TEMPLATES.render("all_posts.html", &ctx);
             match template {
                 Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
                 Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -215,7 +215,7 @@ pub(crate) fn show_posts_by_year(
             let mut ctx = tera::Context::new();
             ctx.insert("posts", &posts);
             
-            let template = COMPILED_TEMPLATES.render("all_posts.html", ctx);
+            let template = COMPILED_TEMPLATES.render("all_posts.html", &ctx);
             match template {
                 Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
                 Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -226,7 +226,7 @@ pub(crate) fn show_posts_by_year(
 }
 
 pub(crate) fn page_404() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
-    let template = COMPILED_TEMPLATES.render("page_404.html", tera::Context::new());
+    let template = COMPILED_TEMPLATES.render("page_404.html", &tera::Context::new());
             
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::NotFound().content_type("text/html").body(t))),

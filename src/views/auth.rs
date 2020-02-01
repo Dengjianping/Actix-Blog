@@ -30,7 +30,7 @@ pub(crate) fn async_redirect(url: &str) -> impl Future<Item=HttpResponse, Error=
 }
 
 pub(crate) fn login() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
-    let template = COMPILED_TEMPLATES.render("admin/login.html", tera::Context::new());
+    let template = COMPILED_TEMPLATES.render("admin/login.html", &tera::Context::new());
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
         Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -111,7 +111,7 @@ pub(crate) fn dashboard(
         ctx.insert("comments_count", &comments_count);
         ctx.insert("messages_count", &messages_count);
         
-        let template = COMPILED_TEMPLATES.render("admin/dashboard.html", ctx);
+        let template = COMPILED_TEMPLATES.render("admin/dashboard.html", &ctx);
         match template {
             Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
             Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -127,7 +127,7 @@ pub(crate) fn logout(identity: Identity) -> FutureResult<HttpResponse, HttpRespo
 }
 
 pub(crate) fn register() -> impl Future<Item=HttpResponse, Error=ErrorKind> {
-    let template = COMPILED_TEMPLATES.render("admin/register.html", tera::Context::new());
+    let template = COMPILED_TEMPLATES.render("admin/register.html", &tera::Context::new());
     
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
@@ -154,7 +154,7 @@ pub(crate) fn handle_registration(
 
 #[login_required]
 pub(crate) fn reset_password(identity: Identity) -> impl Future<Item=HttpResponse, Error=ErrorKind> {
-    let template = COMPILED_TEMPLATES.render("admin/reset_password.html", tera::Context::new());
+    let template = COMPILED_TEMPLATES.render("admin/reset_password.html", &tera::Context::new());
     
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
@@ -199,7 +199,7 @@ pub(crate) fn write_post(identity: Identity) -> impl Future<Item=HttpResponse, E
     let author = identity.identity().unwrap();
     let mut ctx = tera::Context::new();
     ctx.insert("username", &author);
-    let template = COMPILED_TEMPLATES.render("admin/write_post.html", ctx);
+    let template = COMPILED_TEMPLATES.render("admin/write_post.html", &ctx);
     
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
@@ -240,7 +240,7 @@ pub(crate) fn show_all_posts_by_author(
     ctx.insert("created_time", &created_time);
     ctx.insert("username", &author);
     
-    let template = COMPILED_TEMPLATES.render("admin/all_posts.html", ctx);
+    let template = COMPILED_TEMPLATES.render("admin/all_posts.html", &ctx);
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
         Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -257,7 +257,7 @@ pub(crate) fn modify_post(
     if let Ok(Some(post)) = PostOperation::get_post_by_title(&title, &db) {
         let mut ctx = tera::Context::from_serialize(post).unwrap();
         ctx.insert("username", &user_name);
-        let template = COMPILED_TEMPLATES.render("admin/modify_post.html", ctx);
+        let template = COMPILED_TEMPLATES.render("admin/modify_post.html", &ctx);
         match template {
             Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
             Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -313,7 +313,7 @@ pub(crate) fn today_comments(
     });
     
     ctx.insert("comments", &maps);
-    let template = COMPILED_TEMPLATES.render("admin/today_comments.html", ctx);
+    let template = COMPILED_TEMPLATES.render("admin/today_comments.html", &ctx);
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
         Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -334,7 +334,7 @@ pub(crate) fn all_guests_messages(
         ctx.insert("contacts", &contacts);
     });
 
-    let template = COMPILED_TEMPLATES.render("admin/guest_messages.html", ctx);
+    let template = COMPILED_TEMPLATES.render("admin/guest_messages.html", &ctx);
     match template {
         Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
         Err(e) => FutErr(ErrorKind::TemplateError(e.to_string()))
@@ -352,7 +352,7 @@ pub(crate) fn about_self(
     match UserOperation::get_user_by_name(&user_name, &db) {
         Ok(Some(myself)) => {
             ctx.insert("yourself", &myself);
-            let template = COMPILED_TEMPLATES.render("admin/self_info.html", ctx);
+            let template = COMPILED_TEMPLATES.render("admin/self_info.html", &ctx);
 
             match template {
                 Ok(t) => FutResult(Ok(HttpResponse::Ok().content_type("text/html").body(t))),
