@@ -1,7 +1,3 @@
-<p align="center">
-<img src=./samples/web3_foundation_grants_badge_black.svg width = 400>
-</p>
-
 [![Build Status](https://travis-ci.com/Dengjianping/Actix-Blog.svg?branch=master)](https://travis-ci.com/Dengjianping/Actix-Blog)
 
 ## About this project
