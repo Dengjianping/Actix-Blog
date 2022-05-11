@@ -393,7 +393,7 @@ dependencies = [
  "actix-session",
  "actix-web",
  "bcrypt",
- "bytes 0.5.6",
+ "bytes 1.1.0",
  "chrono",
  "diesel",
  "dotenv",
