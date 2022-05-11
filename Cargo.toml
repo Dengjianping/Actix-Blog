@@ -29,7 +29,7 @@ actix-rt = "1.0"
 actix-identity = "0.2"
 openssl = { version = "0.10", features = ["v110"] }
 futures = "0.3"
-bcrypt = "0.6"
+bcrypt = "0.13"
 itertools = "0.8"
 juniper = "0.14"
 
